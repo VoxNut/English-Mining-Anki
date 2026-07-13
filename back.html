@@ -1,0 +1,2078 @@
+<div class="back">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <span class="toggle-custom-dark-mode" style="cursor: pointer">
+        <svg
+          class="sun-icon"
+          style="display: none"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg
+          class="moon-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </span>
+      <span class="toggle-image-visibility show-btn tappable" style="display: none; cursor: pointer; margin-left: 10px; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+      </span>
+    </div>
+
+    {{#Frequency}}
+    <span class="freq-badge">{{Frequency}}</span>
+    {{/Frequency}}
+
+    <div class="header-right audio-buttons">
+      {{WordAudio}} {{SentenceAudio}}
+    </div>
+  </div>
+
+  <!-- Grid Layout -->
+  <div class="grid-container">
+    {{#Image}}
+    <div class="picture-container {{Tags}} clickable-image tappable">
+      {{Image}}
+      <div class="toggle-image-visibility hide-btn tappable">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </div>
+      <div class="nav-arrow left tappable"></div>
+      <div class="nav-arrow right tappable"></div>
+    </div>
+    {{/Image}}
+
+    <div class="word-box">
+      <div class="word-back clickable-word">{{Word}}</div>
+      <div class="ipa-reading">{{IPA}}</div>
+      <span class="pos-tag" data-default-pos="{{text:PartOfSpeech}}">
+        {{PartOfSpeech}}
+      </span>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <img id="lightbox-img" />
+    <a href="#" class="close tappable"></a>
+    <div class="lightbox-nav left tappable"></div>
+    <div class="lightbox-nav right tappable"></div>
+    <button id="show-all" class="lightbox-grid-toggle tappable">
+      Show All
+    </button>
+  </div>
+
+  <!-- Sentence -->
+  {{#Sentence}}
+  <div class="sentence-container hidden">
+    <div class="sentence-back">{{Sentence}}</div>
+  </div>
+  {{/Sentence}}
+
+  <!-- Definition -->
+  <div class="definition-container">
+    <div class="dict-header">
+      <span class="dict-title">Definition</span>
+      <div class="dict-nav">
+        <span class="dict-nav-hint">J / K or Tap</span>
+        <span class="dict-indicator"></span>
+      </div>
+    </div>
+    <div class="definition-wrapper">
+      <div class="touch-zone touch-zone-left"></div>
+      <div class="definition-text">{{Meaning}}</div>
+      <div class="touch-zone touch-zone-right"></div>
+    </div>
+  </div>
+
+  <div id="back-tags-raw" style="display: none">{{Tags}}</div>
+  <div class="tags-container back-tags-container"></div>
+
+  {{#MiscInfo}}
+  <div class="misc-info">{{MiscInfo}}</div>
+  {{/MiscInfo}}
+
+  <div id="dictionaryPreference" style="display: none">{{text:Preference}}</div>
+
+  <script>
+    (function () {
+      // === FIX: Remove duplicate audio from front template ===
+      // Anki Desktop renders front + back HTML together on the back side,
+      // causing "R" to replay every audio element twice.
+      var frontEl = document.querySelector(".front");
+      if (frontEl) {
+        var dupeAudio = frontEl.querySelectorAll(
+          '.audio-section, .replay-button, audio, [id^="anki-autoplay"]',
+        );
+        for (var i = 0; i < dupeAudio.length; i++) {
+          dupeAudio[i].remove();
+        }
+      }
+
+      // === Custom play icon for replay buttons ===
+      var replayBtns = document.querySelectorAll(".replay-button");
+      for (var i = 0; i < replayBtns.length; i++) {
+        var btn = replayBtns[i];
+        btn.innerHTML = '<svg viewBox="0 0 24 24" class="play-icon" width="18" height="18"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>';
+      }
+
+      // === Mobile layout fallback ===
+      // Some AnkiDroid WebView versions don't reliably match CSS mobile queries.
+      // Add a class directly when the device looks like a phone/tablet touch device.
+      var backEl = document.querySelector(".back");
+      if (backEl) {
+        var ua = (navigator.userAgent || "").toLowerCase();
+        var isAndroid = ua.indexOf("android") !== -1;
+        var isIos = /iphone|ipad|ipod/.test(ua);
+        var hasTouch = !!(
+          "ontouchstart" in window ||
+          (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)
+        );
+        var isNarrowScreen = window.innerWidth > 0 && window.innerWidth <= 520;
+
+        if (isAndroid || isIos || (hasTouch && isNarrowScreen)) {
+          backEl.classList.add("mobile-stack-layout");
+
+          // Hard fallback for WebViews that partially ignore CSS @media / :has.
+          var gridEl = backEl.querySelector(".grid-container");
+          var wordBoxEl = backEl.querySelector(".word-box");
+          var picEl = backEl.querySelector(".picture-container");
+
+          if (gridEl) {
+            gridEl.style.setProperty("display", "flex", "important");
+            gridEl.style.setProperty("flex-direction", "column", "important");
+            gridEl.style.setProperty("gap", "var(--spacing-md)", "important");
+            gridEl.style.setProperty("min-height", "0", "important");
+          }
+
+          if (wordBoxEl) {
+            wordBoxEl.style.setProperty("width", "100%", "important");
+            wordBoxEl.style.setProperty(
+              "box-sizing",
+              "border-box",
+              "important",
+            );
+          }
+
+          if (picEl) {
+            picEl.style.setProperty("width", "100%", "important");
+            picEl.style.setProperty("box-sizing", "border-box", "important");
+          }
+        }
+      }
+
+      // === Cross-platform tap handler ===
+      // iOS WebKit ignores click events on non-interactive divs.
+      // This uses touchend (with scroll guard) + click fallback,
+      // while preventing touch ghost-click double firing.
+      function onTap(element, callback) {
+        if (!element) return;
+        if (element.dataset.hasTapListener === "true") return;
+
+        var touchMoved = false;
+        var lastTouchAt = 0;
+
+        element.addEventListener(
+          "touchstart",
+          function () {
+            touchMoved = false;
+          },
+          { passive: true },
+        );
+        element.addEventListener(
+          "touchmove",
+          function () {
+            touchMoved = true;
+          },
+          { passive: true },
+        );
+        element.addEventListener("touchend", function (e) {
+          if (!touchMoved) {
+            lastTouchAt = Date.now();
+            e.preventDefault();
+            callback(e);
+          }
+        });
+        element.addEventListener("click", function (e) {
+          if (Date.now() - lastTouchAt < 450) {
+            return;
+          }
+          callback(e);
+        });
+
+        element.dataset.hasTapListener = "true";
+      }
+
+      // Theme mode toggle: Nord dark <-> Black dark
+      function darkMode() {
+        var button = document.querySelector(".toggle-custom-dark-mode");
+        var htmlElement = document.querySelector("html");
+        var sunIcon = document.querySelector(".sun-icon");
+        var moonIcon = document.querySelector(".moon-icon");
+        var THEME_KEY = "englishThemeMode";
+
+        function getThemeMode() {
+          try {
+            var mode = localStorage.getItem(THEME_KEY);
+            if (mode === "black" || mode === "nord") return mode;
+
+            // Backward compatibility with old key.
+            if (localStorage.getItem("darkMode") === "enabled") {
+              return "black";
+            }
+          } catch (e) {}
+          return "nord";
+        }
+
+        function setThemeMode(mode) {
+          try {
+            localStorage.setItem(THEME_KEY, mode);
+            localStorage.removeItem("darkMode");
+          } catch (e) {}
+        }
+
+        var applyDarkMode = function () {
+          var isBlackTheme = getThemeMode() === "black";
+
+          if (isBlackTheme) {
+            htmlElement.classList.add("custom-dark-mode");
+            if (button) button.classList.add("dark-mode");
+            if (sunIcon) sunIcon.style.display = "block";
+            if (moonIcon) moonIcon.style.display = "none";
+          } else {
+            htmlElement.classList.remove("custom-dark-mode");
+            if (button) button.classList.remove("dark-mode");
+            if (sunIcon) sunIcon.style.display = "none";
+            if (moonIcon) moonIcon.style.display = "block";
+          }
+        };
+
+        if (typeof requestAnimationFrame !== "undefined") {
+          requestAnimationFrame(applyDarkMode);
+        } else {
+          applyDarkMode();
+        }
+
+        if (button && !button.dataset.hasClickListener) {
+          button.addEventListener("click", function () {
+            var current = getThemeMode();
+            setThemeMode(current === "black" ? "nord" : "black");
+
+            if (typeof requestAnimationFrame !== "undefined") {
+              requestAnimationFrame(applyDarkMode);
+            } else {
+              applyDarkMode();
+            }
+          });
+          button.dataset.hasClickListener = "true";
+        }
+      }
+
+      darkMode();
+
+      // === Back tags display ===
+      function renderBackTags() {
+        var rawTagsEl = document.getElementById("back-tags-raw");
+        var tagsContainer = document.querySelector(".back-tags-container");
+        if (!rawTagsEl || !tagsContainer) return;
+
+        var rawText = (rawTagsEl.textContent || "").trim();
+        tagsContainer.innerHTML = "";
+
+        if (!rawText) {
+          tagsContainer.style.display = "none";
+          return;
+        }
+
+        var tags = rawText.split(/\s+/).filter(function (tag) {
+          return tag.length > 0;
+        });
+
+        if (tags.length === 0) {
+          tagsContainer.style.display = "none";
+          return;
+        }
+
+        for (var i = 0; i < tags.length; i++) {
+          var chip = document.createElement("span");
+          chip.className = "tag";
+          chip.textContent = tags[i];
+          tagsContainer.appendChild(chip);
+        }
+
+        tagsContainer.style.display = "flex";
+      }
+
+      renderBackTags();
+
+      // === Toggle sentence visibility on word tap ===
+      var word = document.querySelector(".back .clickable-word");
+      var sentence = document.querySelector(".back .sentence-container");
+
+      if (word && sentence) {
+        onTap(word, function () {
+          sentence.classList.toggle("hidden");
+        });
+      }
+
+      // === Advanced Image Features (Senren-style) ===
+      var englishConfig = {};
+      function getVar(name) {
+        var value = getComputedStyle(document.documentElement)
+          .getPropertyValue(name)
+          .trim();
+        return value.replace(/^['"]|['"]$/g, "");
+      }
+
+      function updateConfig() {
+        englishConfig.collectGlossaryImages = getVar("--collect-glossary-images");
+        englishConfig.collectGlossaryImagesMax = getVar("--collect-glossary-images-max");
+        englishConfig.collectGlossaryImagesMinDim = getVar("--collect-glossary-images-min-dim");
+        englishConfig.collectGlossaryImagesMinArea = getVar("--collect-glossary-images-min-area");
+        englishConfig.togglePictureLightboxKey = getVar("--toggle-picture-lightbox-key");
+        englishConfig.togglePictureLightboxGridKey = getVar("--toggle-picture-lightbox-grid-key");
+        englishConfig.toggleImageKey = getVar("--toggle-image-key");
+      }
+      updateConfig();
+
+      // Helper functions for shortcuts
+      function parseKeyConfig(configStr) {
+        if (!configStr) return null;
+        var parts = configStr
+          .toLowerCase()
+          .split(/[\s+]+/)
+          .filter(function (p) { return p; });
+        if (parts.length === 0) return null;
+
+        var key = parts.pop();
+        return {
+          key: key,
+          ctrl: parts.indexOf("ctrl") !== -1 || parts.indexOf("control") !== -1,
+          alt: parts.indexOf("alt") !== -1,
+          shift: parts.indexOf("shift") !== -1,
+          meta: parts.indexOf("meta") !== -1 || parts.indexOf("cmd") !== -1,
+        };
+      }
+
+      function isKeyMatch(event, config) {
+        if (!config) return false;
+        return (
+          event.key.toLowerCase() === config.key &&
+          event.ctrlKey === config.ctrl &&
+          event.altKey === config.alt &&
+          event.shiftKey === config.shift &&
+          event.metaKey === config.meta
+        );
+      }
+
+      // Quick filter to hide tiny dash/icon images before they flash on screen
+      function prefilterTinyImages() {
+        var pictureContainer = document.querySelector(".back .picture-container");
+        if (!pictureContainer) return;
+
+        var images = Array.from(pictureContainer.querySelectorAll("img"));
+        if (!images.length) return;
+
+        var isTinyByDimensions = function (w, h) {
+          if (!w || !h) return false;
+          return h <= 24 || w <= 24 || (w <= 32 && h <= 32);
+        };
+
+        images.forEach(function (img) {
+          var applyFilter = function () {
+            if (img.classList.contains("senren-filtered-image")) {
+              img.style.setProperty("display", "none", "important");
+              img.style.visibility = "";
+              enableImageSwitching();
+              return;
+            }
+
+            if (isTinyByDimensions(img.naturalWidth, img.naturalHeight)) {
+              img.classList.add("senren-filtered-image");
+              img.style.setProperty("display", "none", "important");
+              enableImageSwitching();
+            }
+            img.style.visibility = "";
+          };
+
+          if (img.complete) {
+            applyFilter();
+          } else {
+            img.style.visibility = "hidden";
+            var onDone = function () {
+              applyFilter();
+              img.removeEventListener("load", onDone);
+              img.removeEventListener("error", onDone);
+            };
+            img.addEventListener("load", onDone);
+            img.addEventListener("error", onDone);
+          }
+        });
+      }
+
+      // Filter out tiny divider / icon / dash images (deferred check with blob size)
+      function filterTinyImages() {
+        var images = Array.from(document.querySelectorAll(".picture-container img"));
+        var skipBlobCheck = englishConfig.collectGlossaryImages === "true";
+        var maxBlobChecks = 6;
+        var blobChecks = 0;
+        
+        var canCheckBlob = function (w, h) {
+          return !skipBlobCheck && blobChecks < maxBlobChecks && (w <= 160 || h <= 160);
+        };
+
+        var filterPromises = images.map(function (img) {
+          if (img.classList.contains("senren-filtered-image")) return Promise.resolve();
+
+          var loadPromise;
+          if (!img.complete) {
+            loadPromise = Promise.race([
+              new Promise(function (resolve) {
+                img.addEventListener("load", resolve);
+                img.addEventListener("error", resolve);
+              }),
+              new Promise(function (resolve) { setTimeout(resolve, 300); })
+            ]);
+          } else {
+            loadPromise = Promise.resolve();
+          }
+
+          return loadPromise.then(function () {
+            var isTiny = false;
+            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+              if (
+                img.naturalHeight <= 24 ||
+                img.naturalWidth <= 24 ||
+                (img.naturalWidth <= 32 && img.naturalHeight <= 32)
+              ) {
+                isTiny = true;
+                return isTiny;
+              } else if (canCheckBlob(img.naturalWidth, img.naturalHeight)) {
+                blobChecks += 1;
+                return fetch(img.src)
+                  .then(function (res) { return res.blob(); })
+                  .then(function (blob) {
+                    if (blob.size < 2000) {
+                      isTiny = true;
+                    }
+                    return isTiny;
+                  })
+                  .catch(function () { return false; });
+              }
+            } else {
+              if (!skipBlobCheck && blobChecks < maxBlobChecks) {
+                blobChecks += 1;
+                return fetch(img.src)
+                  .then(function (res) { return res.blob(); })
+                  .then(function (blob) {
+                    if (blob.size < 2000) {
+                      isTiny = true;
+                    }
+                    return isTiny;
+                  })
+                  .catch(function () { return false; });
+              }
+            }
+            return isTiny;
+          }).then(function (isTiny) {
+            if (isTiny) {
+              img.classList.add("senren-filtered-image");
+              img.style.setProperty("display", "none", "important");
+              enableImageSwitching();
+            }
+          });
+        });
+
+        return Promise.race([
+          Promise.all(filterPromises),
+          new Promise(function (resolve) { setTimeout(resolve, 500); })
+        ]);
+      }
+
+      // Collect images from the definition / glossary and add them to the picture container
+      function collectGlossaryImages(deferred) {
+        if (englishConfig.collectGlossaryImages !== "true") return;
+
+        var glossaryItems = document.querySelectorAll(
+          ".definition-text img, .misc-info img"
+        );
+        var pictureContainer = document.querySelector(".back .picture-container");
+        var maxImages = parseInt(englishConfig.collectGlossaryImagesMax, 10);
+        if (isNaN(maxImages) || maxImages < 0) maxImages = 0;
+        var minDim = parseInt(englishConfig.collectGlossaryImagesMinDim, 10);
+        if (isNaN(minDim) || minDim < 0) minDim = 0;
+        var minArea = parseInt(englishConfig.collectGlossaryImagesMinArea, 10);
+        if (isNaN(minArea) || minArea < 0) minArea = 0;
+
+        if (!glossaryItems.length || !pictureContainer) return;
+
+        var processedSrcs =
+          pictureContainer._englishGlossaryProcessedSrcs ||
+          (pictureContainer._englishGlossaryProcessedSrcs = new Set());
+
+        if (
+          !deferred &&
+          pictureContainer.querySelector("img:not(.senren-filtered-image)")
+        ) {
+          return;
+        }
+
+        var existingSrcs = new Set(
+          Array.from(pictureContainer.querySelectorAll("img")).map(
+            function (img) { return img.src; }
+          )
+        );
+        var scheduledCount = existingSrcs.size;
+        if (maxImages > 0 && scheduledCount >= maxImages) return;
+
+        glossaryItems.forEach(function (img) {
+          if (maxImages > 0 && scheduledCount >= maxImages) return;
+          var src = img.currentSrc || img.src;
+          if (!src || existingSrcs.has(src) || processedSrcs.has(src)) return;
+
+          if (
+            src === window.location.href ||
+            src.toLowerCase().indexOf(".svg") !== -1
+          ) {
+            processedSrcs.add(src);
+            return;
+          }
+
+          existingSrcs.add(src);
+          processedSrcs.add(src);
+          scheduledCount += 1;
+
+          var newImg = new Image();
+          newImg.decoding = "async";
+          newImg.fetchPriority = "low";
+          newImg.loading = "lazy";
+          newImg.src = src;
+
+          newImg.onload = function () {
+            var w = newImg.naturalWidth;
+            var h = newImg.naturalHeight;
+            var aspectRatio = w / h;
+
+            // Skip small icons and badges
+            if (w < 80 || h < 80 || aspectRatio > 2.2 || aspectRatio < 0.4) return;
+            if (minDim > 0 && (w < minDim || h < minDim)) return;
+            if (minArea > 0 && w * h < minArea) return;
+
+            if (
+              w >= 120 &&
+              h >= 180 &&
+              aspectRatio >= 0.7 &&
+              aspectRatio <= 1.6
+            ) {
+              newImg.classList.add("tappable");
+            }
+
+            pictureContainer.appendChild(newImg);
+            enableImageSwitching();
+            enableLightbox();
+          };
+        });
+      }
+
+      // Allows cycling through images
+      function enableImageSwitching() {
+        var currentImageIndex = 0;
+
+        var switchImage = function (direction, event) {
+          if (event) event.preventDefault();
+          if (event) event.stopPropagation();
+
+          var images = document.querySelectorAll(".picture-container img:not(.senren-filtered-image)");
+          if (images.length === 0) return;
+
+          var visibleIndex = Array.from(images).findIndex(function (img) {
+            return window.getComputedStyle(img).display !== "none";
+          });
+
+          if (visibleIndex !== -1) currentImageIndex = visibleIndex;
+
+          images.forEach(function (img) {
+            img.style.setProperty("display", "none", "important");
+          });
+
+          currentImageIndex += direction;
+
+          if (currentImageIndex >= images.length) {
+            currentImageIndex = 0;
+          } else if (currentImageIndex < 0) {
+            currentImageIndex = images.length - 1;
+          }
+
+          images[currentImageIndex].style.setProperty(
+            "display",
+            "block",
+            "important"
+          );
+        };
+
+        var arrows = document.querySelectorAll(".nav-arrow");
+        var images = document.querySelectorAll(".picture-container img:not(.senren-filtered-image)");
+
+        // Ensure at least one valid image is visible
+        if (images.length > 0) {
+          var hasVisible = Array.from(images).some(function (img) {
+            return img.style.display === "block" || window.getComputedStyle(img).display !== "none";
+          });
+          if (!hasVisible) {
+            images[0].style.setProperty("display", "block", "important");
+          }
+        }
+
+        if (images.length <= 1) {
+          arrows.forEach(function (arrow) { arrow.classList.add("hidden"); });
+        } else {
+          arrows.forEach(function (arrow) { arrow.classList.remove("hidden"); });
+        }
+
+        arrows.forEach(function (arrow) {
+          if (!arrow.dataset.hasClickListener) {
+            arrow.addEventListener("click", function (event) {
+              var direction = arrow.classList.contains("left") ? -1 : 1;
+              switchImage(direction, event);
+            });
+            arrow.dataset.hasClickListener = "true";
+          }
+        });
+      }
+
+      // Creates lightbox for image viewing with zoom & panning gestures
+      function enableLightbox() {
+        var images = document.querySelectorAll(".picture-container img:not(.senren-filtered-image)");
+        if (!images.length) return;
+
+        var currentIndex = 0;
+        var scale = 1;
+        var translateX = 0;
+        var translateY = 0;
+        var isPanning = false;
+        var startX = 0;
+        var startY = 0;
+        var isGridView = false;
+
+        var lightbox = document.getElementById("lightbox");
+        var lightboxImg = document.getElementById("lightbox-img");
+        var leftButton = document.querySelector(".lightbox-nav.left");
+        var rightButton = document.querySelector(".lightbox-nav.right");
+        var showAll = document.getElementById("show-all");
+
+        if (!lightbox || !lightboxImg || !leftButton || !rightButton || !showAll)
+          return;
+
+        if (images.length <= 1) {
+          leftButton.classList.add("hidden");
+          rightButton.classList.add("hidden");
+          showAll.style.display = "none";
+        } else {
+          leftButton.classList.remove("hidden");
+          rightButton.classList.remove("hidden");
+          showAll.style.display = "block";
+        }
+
+        var showGridView = function () {
+          isGridView = true;
+          var gridContainer = document.createElement("div");
+          gridContainer.className = "lightbox-grid";
+
+          images.forEach(function (img, index) {
+            var gridImg = document.createElement("img");
+            gridImg.src = img.src;
+            gridImg.alt = "Image " + (index + 1);
+            gridImg.classList.add("tappable");
+            gridImg.addEventListener("click", function () {
+              showImage(index);
+              hideGridView();
+            });
+            gridContainer.appendChild(gridImg);
+          });
+
+          var imgCount = images.length;
+          if (imgCount <= 4) {
+            gridContainer.style.gridTemplateColumns = "repeat(" + imgCount + ", 1fr)";
+          } else if (imgCount <= 9) {
+            gridContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+          } else {
+            gridContainer.style.gridTemplateColumns = "repeat(4, 1fr)";
+          }
+
+          lightbox.appendChild(gridContainer);
+          lightboxImg.style.display = "none";
+          leftButton.style.display = "none";
+          rightButton.style.display = "none";
+          showAll.textContent = "Back";
+        };
+
+        var hideGridView = function () {
+          isGridView = false;
+          var grid = document.querySelector(".lightbox-grid");
+          if (grid) {
+            grid.remove();
+          }
+          lightboxImg.style.display = "block";
+          leftButton.style.display = "";
+          rightButton.style.display = "";
+          showAll.textContent = "Show All";
+        };
+
+        var showImage = function (index) {
+          if (isGridView) hideGridView();
+          currentIndex = index;
+          lightboxImg.src = images[index].src;
+          resetTransform();
+          if (images.length > 1) showAll.style.display = "block";
+          lightbox.classList.add("active");
+        };
+
+        var resetTransform = function () {
+          scale = 1;
+          translateX = 0;
+          translateY = 0;
+          updateTransform();
+        };
+
+        var updateTransform = function () {
+          lightboxImg.style.transform = "translate(" + translateX + "px, " + translateY + "px) scale(" + scale + ")";
+        };
+
+        images.forEach(function (img, index) {
+          if (!img.dataset.hasLightboxListener) {
+            var tagsRaw = "{{Tags}}".toLowerCase();
+            var isNSFW = tagsRaw.indexOf("nsfw") !== -1 || document.body.className.toLowerCase().indexOf("nsfw") !== -1;
+
+            if (isNSFW) {
+              img.addEventListener("click", function (e) {
+                if (img.classList.contains("unblurred") || img.classList.contains("clicked")) {
+                  showImage(index);
+                } else {
+                  images.forEach(function (i) { i.classList.add("unblurred"); i.classList.add("clicked"); });
+                }
+              });
+            } else {
+              img.addEventListener("click", function () { showImage(index); });
+            }
+            img.dataset.hasLightboxListener = "true";
+          }
+        });
+
+        if (!showAll.dataset.hasClickListener) {
+          showAll.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (isGridView) {
+              hideGridView();
+            } else {
+              showGridView();
+            }
+          });
+          showAll.dataset.hasClickListener = "true";
+        }
+
+        if (!lightbox.dataset.hasShortcutsListener) {
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+              if (isGridView) {
+                hideGridView();
+              } else {
+                lightbox.classList.remove("active");
+              }
+            }
+
+            if (lightbox.classList.contains("active") && !isGridView) {
+              if (e.key === "j" || e.key === "J") {
+                showImage(
+                  (currentIndex =
+                    currentIndex > 0 ? currentIndex - 1 : images.length - 1)
+                );
+              }
+              if (e.key === "k" || e.key === "K") {
+                showImage(
+                  (currentIndex =
+                    currentIndex < images.length - 1 ? currentIndex + 1 : 0)
+                );
+              }
+            }
+          });
+          lightbox.dataset.hasShortcutsListener = "true";
+        }
+
+        if (!lightboxImg.dataset.hasWheelListener) {
+          lightboxImg.addEventListener("wheel", function (e) {
+            e.preventDefault();
+            var prevScale = scale;
+            scale = Math.min(Math.max(1, scale + e.deltaY * -0.001), 3);
+
+            if (scale === 1) {
+              resetTransform();
+              if (images.length > 1) showAll.style.display = "block";
+            } else {
+              var rect = lightboxImg.getBoundingClientRect();
+              var offsetX = (e.clientX - rect.left) / rect.width;
+              var offsetY = (e.clientY - rect.top) / rect.height;
+              translateX -= (offsetX - 0.5) * (scale - prevScale) * rect.width;
+              translateY -= (offsetY - 0.5) * (scale - prevScale) * rect.height;
+              updateTransform();
+              showAll.style.display = "none";
+            }
+          });
+          lightboxImg.dataset.hasWheelListener = "true";
+        }
+
+        if (!lightboxImg.dataset.hasMousedownListener) {
+          lightboxImg.addEventListener("mousedown", function (e) {
+            if (scale === 1) return;
+            e.preventDefault();
+            isPanning = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lightboxImg.style.cursor = "grabbing";
+          });
+          lightboxImg.dataset.hasMousedownListener = "true";
+        }
+
+        var initialDistance = null;
+
+        if (!lightboxImg.dataset.hasTouchListeners) {
+          lightboxImg.addEventListener("touchstart", function (e) {
+            if (e.touches.length === 2) {
+              initialDistance = Math.hypot(
+                e.touches[0].pageX - e.touches[1].pageX,
+                e.touches[0].pageY - e.touches[1].pageY
+              );
+              isPanning = false;
+            } else if (e.touches.length === 1 && scale > 1) {
+              isPanning = true;
+              startX = e.touches[0].pageX - translateX;
+              startY = e.touches[0].pageY - translateY;
+              initialDistance = null;
+            } else {
+              isPanning = false;
+              initialDistance = null;
+            }
+          });
+
+          lightboxImg.addEventListener("touchmove", function (e) {
+            if (e.touches.length === 2 && initialDistance !== null) {
+              e.preventDefault();
+              var newDistance = Math.hypot(
+                e.touches[0].pageX - e.touches[1].pageX,
+                e.touches[0].pageY - e.touches[1].pageY
+              );
+              var newScale = scale * (newDistance / initialDistance);
+              var prevScale = scale;
+
+              scale = Math.min(Math.max(1, newScale), 3);
+
+              if (scale > 1) {
+                var rect = lightboxImg.getBoundingClientRect();
+                var touchCenterX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+                var touchCenterY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+
+                var offsetX = (touchCenterX - rect.left) / rect.width;
+                var offsetY = (touchCenterY - rect.top) / rect.height;
+
+                translateX -= (offsetX - 0.5) * (scale - prevScale) * rect.width;
+                translateY -= (offsetY - 0.5) * (scale - prevScale) * rect.height;
+
+                updateTransform();
+                showAll.style.display = "none";
+              } else {
+                resetTransform();
+                if (images.length > 1) showAll.style.display = "block";
+              }
+              initialDistance = newDistance;
+            } else if (e.touches.length === 1 && isPanning) {
+              e.preventDefault();
+              translateX = e.touches[0].pageX - startX;
+              translateY = e.touches[0].pageY - startY;
+              updateTransform();
+            }
+          });
+
+          lightboxImg.addEventListener("touchend", function (e) {
+            if (e.touches.length < 2) {
+              initialDistance = null;
+            }
+            if (e.touches.length < 1) {
+              isPanning = false;
+            }
+          });
+          lightboxImg.dataset.hasTouchListeners = "true";
+        }
+
+        var moveImage = function (e) {
+          if (!isPanning) return;
+          translateX = e.clientX - startX;
+          translateY = e.clientY - startY;
+          updateTransform();
+        };
+
+        if (!lightbox.dataset.hasMouseMoveListeners) {
+          document.addEventListener("mousemove", function (e) {
+            if (isPanning) {
+              if (typeof requestAnimationFrame !== "undefined") {
+                requestAnimationFrame(function () { moveImage(e); });
+              } else {
+                moveImage(e);
+              }
+            }
+          });
+
+          document.addEventListener("mouseup", function () {
+            isPanning = false;
+            lightboxImg.style.cursor = "grab";
+          });
+          lightbox.dataset.hasMouseMoveListeners = "true";
+        }
+
+        if (!lightbox.dataset.hasClickListeners) {
+          lightbox.addEventListener("click", function (e) {
+            if (
+              e.target === lightbox ||
+              (isGridView && !e.target.closest(".lightbox-grid img") && e.target !== showAll)
+            ) {
+              lightbox.classList.remove("active");
+            }
+          });
+
+          lightbox.addEventListener("touchend", function (e) {
+            if (
+              e.target === lightbox ||
+              (isGridView && !e.target.closest(".lightbox-grid img") && e.target !== showAll)
+            ) {
+              lightbox.classList.remove("active");
+            }
+          });
+          lightbox.dataset.hasClickListeners = "true";
+        }
+
+        if (!leftButton.dataset.hasClickListener) {
+          leftButton.addEventListener("click", function () {
+            showImage(
+              (currentIndex =
+                currentIndex > 0 ? currentIndex - 1 : images.length - 1)
+            );
+          });
+          leftButton.dataset.hasClickListener = "true";
+        }
+
+        if (!rightButton.dataset.hasClickListener) {
+          rightButton.addEventListener("click", function () {
+            showImage(
+              (currentIndex =
+                currentIndex < images.length - 1 ? currentIndex + 1 : 0)
+            );
+          });
+          rightButton.dataset.hasClickListener = "true";
+        }
+      }
+
+      // Custom Keyboard Shortcuts
+      function enableCustomShortcuts() {
+        var utils = {
+          isTyping: function () {
+            var active = document.activeElement;
+            return active && ["INPUT", "TEXTAREA"].includes(active.tagName);
+          }
+        };
+
+        var actions = {
+          lightboxGrid: function () {
+            var lb = document.getElementById("lightbox");
+            var btn = document.getElementById("show-all");
+
+            if (lb && !lb.classList.contains("active")) {
+              var img = document.querySelector(".picture-container img:not(.senren-filtered-image)");
+              if (img) {
+                img.click();
+                setTimeout(function () { btn?.click(); }, 15);
+              }
+            } else if (btn) {
+              btn.click();
+            }
+          },
+
+          lightbox: function () {
+            var lb = document.getElementById("lightbox");
+
+            if (lb?.classList.contains("active")) {
+              lb.classList.remove("active");
+              var grid = document.querySelector(".lightbox-grid");
+              if (grid) grid.remove();
+              var showAll = document.getElementById("show-all");
+              if (showAll) showAll.textContent = "Show All";
+              var navs = document.querySelectorAll(".lightbox-nav");
+              navs.forEach(function (n) { n.style.display = ""; });
+            } else {
+              var imgs = document.querySelectorAll(".picture-container img:not(.senren-filtered-image)");
+              var visible = Array.from(imgs).find(function (i) {
+                return getComputedStyle(i).display !== "none";
+              }) || imgs[0];
+
+              if (visible) visible.click();
+            }
+          },
+
+          imageToggle: function () {
+            var wrap = document.querySelector(".back");
+            var showBtn = document.querySelector(".back .header .show-btn");
+            if (wrap) {
+              var isHidden = wrap.classList.toggle("image-removed");
+              localStorage.setItem("englishImageHidden", isHidden ? "true" : "false");
+              if (showBtn) {
+                showBtn.style.setProperty("display", isHidden ? "flex" : "none", "important");
+              }
+            }
+          }
+        };
+
+        if (window.englishImageBackKeyHandler) {
+          document.removeEventListener("keydown", window.englishImageBackKeyHandler);
+        }
+
+        window.englishImageBackKeyHandler = function (e) {
+          if (utils.isTyping()) return;
+
+          var shortcuts = [
+            { key: englishConfig.togglePictureLightboxGridKey, action: actions.lightboxGrid },
+            { key: englishConfig.togglePictureLightboxKey, action: actions.lightbox },
+            { key: englishConfig.toggleImageKey, action: actions.imageToggle }
+          ];
+
+          for (var i = 0; i < shortcuts.length; i++) {
+            var item = shortcuts[i];
+            var keyStr = item.key;
+            if (!keyStr) continue;
+
+            var config = parseKeyConfig(keyStr);
+            if (isKeyMatch(e, config)) {
+              e.preventDefault();
+              e.stopPropagation();
+              item.action();
+              break;
+            }
+          }
+        };
+
+        document.addEventListener("keydown", window.englishImageBackKeyHandler);
+      }
+
+      // Toggle Image Show/Hide
+      function enableImageToggle() {
+        var hideBtn = document.querySelector(".back .picture-container .hide-btn");
+        var showBtn = document.querySelector(".back .header .show-btn");
+        var backWrapper = document.querySelector(".back");
+
+        if (!backWrapper) return;
+
+        var updateBtnVisibility = function (isHidden) {
+          if (showBtn) {
+            showBtn.style.setProperty("display", isHidden ? "flex" : "none", "important");
+          }
+        };
+
+        var savedState = localStorage.getItem("englishImageHidden");
+        var isCurrentlyHidden = (savedState === "true");
+        if (isCurrentlyHidden) {
+          backWrapper.classList.add("image-removed");
+          updateBtnVisibility(true);
+        } else {
+          backWrapper.classList.remove("image-removed");
+          updateBtnVisibility(false);
+        }
+
+        var toggle = function () {
+          var isHidden = backWrapper.classList.toggle("image-removed");
+          localStorage.setItem("englishImageHidden", isHidden ? "true" : "false");
+          updateBtnVisibility(isHidden);
+        };
+
+        if (hideBtn && !hideBtn.dataset.hasToggleListener) {
+          hideBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggle();
+          });
+          hideBtn.dataset.hasToggleListener = "true";
+        }
+
+        if (showBtn && !showBtn.dataset.hasToggleListener) {
+          showBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggle();
+          });
+          showBtn.dataset.hasToggleListener = "true";
+        }
+      }
+
+      // --- Execution flow ---
+      function initImages() {
+        enableImageToggle();
+        prefilterTinyImages();
+        collectGlossaryImages(false);
+        enableImageSwitching();
+        enableLightbox();
+      }
+
+      function initImagesDeferred() {
+        setTimeout(function () {
+          collectGlossaryImages(true);
+          filterTinyImages().then(function () {
+            enableImageToggle();
+            enableImageSwitching();
+            enableLightbox();
+            enableCustomShortcuts();
+          });
+        }, 150);
+      }
+
+      initImages();
+      initImagesDeferred();
+
+      // === Definition carousel ===
+      // Pre-hide definition entries to avoid first-paint flash before preference ordering.
+      var preContainer = document.querySelector(".definition-text");
+      if (preContainer) {
+        var preItems = Array.from(
+          preContainer.querySelectorAll("ol > li[data-dictionary]"),
+        );
+        for (var pi = 0; pi < preItems.length; pi++) {
+          preItems[pi].style.display = "none";
+        }
+      }
+
+      // Wait a tiny bit for Anki to fully render the content
+      setTimeout(function () {
+        var container = document.querySelector(".definition-text");
+        if (!container) return;
+
+        function escapeRegExp(text) {
+          return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        function normalizeWordText(text) {
+          return (text || "")
+            .replace(/\u00A0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function clearWordHighlights(root) {
+          var marks = root.querySelectorAll(".glossary-word-highlight");
+          for (var i = 0; i < marks.length; i++) {
+            var mark = marks[i];
+            var textNode = document.createTextNode(mark.textContent || "");
+            mark.parentNode.replaceChild(textNode, mark);
+          }
+          root.normalize();
+        }
+        function buildWordHighlightPattern(targetWord) {
+          var normalized = normalizeWordText(targetWord).toLowerCase();
+          if (!normalized) return null;
+
+          var isSimpleWord = /^[A-Za-z]+(?:['-][A-Za-z]+)*$/.test(normalized);
+          if (!isSimpleWord) {
+            return new RegExp(escapeRegExp(targetWord), "gi");
+          }
+
+          var variants = {};
+          function add(form) {
+            if (form) variants[form] = true;
+          }
+
+          add(normalized);
+
+          if (normalized.length >= 3) {
+            add(normalized + "s");
+            add(normalized + "ed");
+            add(normalized + "ing");
+            add(normalized + "er");
+            add(normalized + "est");
+            add(normalized + "ly");
+
+            if (/(s|x|z|ch|sh|o)$/.test(normalized)) add(normalized + "es");
+
+            if (normalized.endsWith("e")) {
+              var dropE = normalized.slice(0, -1);
+              add(dropE + "ing");
+              add(dropE + "er");
+              add(dropE + "est");
+              add(normalized + "d");
+            }
+
+            if (/[bcdfghjklmnpqrstvwxyz]y$/.test(normalized)) {
+              var stemY = normalized.slice(0, -1);
+              add(stemY + "ies");
+              add(stemY + "ied");
+              add(stemY + "ier");
+              add(stemY + "iest");
+            }
+
+            // CVC doubling: run→running, sit→sitting, get→getting
+            if (
+              /^.+[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/.test(
+                normalized,
+              )
+            ) {
+              var last = normalized[normalized.length - 1];
+              add(normalized + last + "ed");
+              add(normalized + last + "ing");
+              add(normalized + last + "er");
+            }
+          }
+
+          // Common irregular verb forms
+          var irregulars = {
+            be: ["am", "is", "are", "was", "were", "been", "being"],
+            have: ["has", "had", "having"],
+            do: ["does", "did", "done", "doing"],
+            go: ["goes", "went", "gone", "going"],
+            get: ["gets", "got", "gotten", "getting"],
+            make: ["makes", "made", "making"],
+            take: ["takes", "took", "taken", "taking"],
+            come: ["comes", "came", "coming"],
+            see: ["sees", "saw", "seen", "seeing"],
+            know: ["knows", "knew", "known", "knowing"],
+            think: ["thinks", "thought", "thinking"],
+            say: ["says", "said", "saying"],
+            give: ["gives", "gave", "given", "giving"],
+            find: ["finds", "found", "finding"],
+            tell: ["tells", "told", "telling"],
+            become: ["becomes", "became", "becoming"],
+            show: ["shows", "showed", "shown", "showing"],
+            leave: ["leaves", "left", "leaving"],
+            bring: ["brings", "brought", "bringing"],
+            begin: ["begins", "began", "begun", "beginning"],
+            keep: ["keeps", "kept", "keeping"],
+            hold: ["holds", "held", "holding"],
+            write: ["writes", "wrote", "written", "writing"],
+            stand: ["stands", "stood", "standing"],
+            hear: ["hears", "heard", "hearing"],
+            mean: ["means", "meant", "meaning"],
+            meet: ["meets", "met", "meeting"],
+            run: ["runs", "ran", "running"],
+            pay: ["pays", "paid", "paying"],
+            sit: ["sits", "sat", "sitting"],
+            speak: ["speaks", "spoke", "spoken", "speaking"],
+            lead: ["leads", "led", "leading"],
+            grow: ["grows", "grew", "grown", "growing"],
+            lose: ["loses", "lost", "losing"],
+            fall: ["falls", "fell", "fallen", "falling"],
+            send: ["sends", "sent", "sending"],
+            build: ["builds", "built", "building"],
+            understand: ["understands", "understood", "understanding"],
+            break: ["breaks", "broke", "broken", "breaking"],
+            spend: ["spends", "spent", "spending"],
+            rise: ["rises", "rose", "risen", "rising"],
+            drive: ["drives", "drove", "driven", "driving"],
+            buy: ["buys", "bought", "buying"],
+            wear: ["wears", "wore", "worn", "wearing"],
+            choose: ["chooses", "chose", "chosen", "choosing"],
+            catch: ["catches", "caught", "catching"],
+            throw: ["throws", "threw", "thrown", "throwing"],
+            spread: ["spreads", "spreading"],
+            draw: ["draws", "drew", "drawn", "drawing"],
+            lay: ["lays", "laid", "laying"],
+            lie: ["lies", "lay", "lain", "lying"],
+            arise: ["arises", "arose", "arisen", "arising"],
+            forbid: ["forbids", "forbade", "forbidden", "forbidding"],
+            forgive: ["forgives", "forgave", "forgiven", "forgiving"],
+            forget: ["forgets", "forgot", "forgotten", "forgetting"],
+            hide: ["hides", "hid", "hidden", "hiding"],
+            ride: ["rides", "rode", "ridden", "riding"],
+            ring: ["rings", "rang", "rung", "ringing"],
+            sing: ["sings", "sang", "sung", "singing"],
+            sink: ["sinks", "sank", "sunk", "sinking"],
+            swim: ["swims", "swam", "swum", "swimming"],
+            swing: ["swings", "swung", "swinging"],
+            wake: ["wakes", "woke", "woken", "waking"],
+            withdraw: ["withdraws", "withdrew", "withdrawn", "withdrawing"],
+          };
+
+          var irr = irregulars[normalized];
+          if (irr) irr.forEach(add);
+
+          var forms = Object.keys(variants).sort(function (a, b) {
+            return b.length - a.length;
+          });
+          if (forms.length === 0) return null;
+
+          var body = forms.map(escapeRegExp).join("|");
+          return new RegExp("\\b(?:" + body + ")(?:'s|')?\\b", "gi");
+        }
+        function highlightWordInGlossary(root, targetWord) {
+          if (!root || !targetWord) return;
+
+          clearWordHighlights(root);
+
+          var pattern = buildWordHighlightPattern(targetWord);
+          if (!pattern) return;
+
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+              if (!node || !node.nodeValue || !node.nodeValue.trim()) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              var parent = node.parentElement;
+              if (!parent) return NodeFilter.FILTER_REJECT;
+
+              var tag = parent.tagName;
+              if (
+                tag === "SCRIPT" ||
+                tag === "STYLE" ||
+                tag === "NOSCRIPT" ||
+                tag === "TEXTAREA"
+              ) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              // Skip already-highlighted nodes
+              if (parent.closest(".glossary-word-highlight")) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              // Skip wty-en-en bold-text spans — already visually marked, CSS handles these
+              if (parent.closest('[data-sc-content="bold-text"]')) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              // Skip dictionary source label <i> that is the first child of a [data-dictionary] li
+              if (tag === "I" || tag === "EM") {
+                var li = parent.parentElement;
+                if (
+                  li &&
+                  li.hasAttribute("data-dictionary") &&
+                  parent === li.firstElementChild
+                ) {
+                  return NodeFilter.FILTER_REJECT;
+                }
+              }
+
+              // Skip Grammar / Etymology / example <summary> toggles
+              if (parent.closest("summary")) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              // Skip the preamble block (Grammar/Etymology containers)
+              if (parent.closest('[data-sc-content="preamble"]')) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              return NodeFilter.FILTER_ACCEPT;
+            },
+          });
+
+          var textNodes = [];
+          var currentNode;
+          while ((currentNode = walker.nextNode())) {
+            textNodes.push(currentNode);
+          }
+
+          for (var i = 0; i < textNodes.length; i++) {
+            var node = textNodes[i];
+            var text = node.nodeValue;
+            if (!text) continue;
+
+            pattern.lastIndex = 0;
+            if (!pattern.test(text)) continue;
+
+            pattern.lastIndex = 0;
+            var fragment = document.createDocumentFragment();
+            var lastIndex = 0;
+            var match;
+
+            while ((match = pattern.exec(text)) !== null) {
+              var matchIndex = match.index;
+              var matchText = match[0];
+
+              if (matchIndex > lastIndex) {
+                fragment.appendChild(
+                  document.createTextNode(text.slice(lastIndex, matchIndex)),
+                );
+              }
+
+              var mark = document.createElement("mark");
+              mark.className = "glossary-word-highlight";
+              mark.textContent = matchText;
+              fragment.appendChild(mark);
+
+              lastIndex = matchIndex + matchText.length;
+            }
+
+            if (lastIndex < text.length) {
+              fragment.appendChild(
+                document.createTextNode(text.slice(lastIndex)),
+              );
+            }
+
+            node.parentNode.replaceChild(fragment, node);
+          }
+        }
+
+        var wordTextEl = document.querySelector(".back .word-back");
+        var highlightTargetWord = normalizeWordText(
+          wordTextEl ? wordTextEl.textContent : "",
+        );
+        highlightWordInGlossary(container, highlightTargetWord);
+
+        var posTagEl = document.querySelector(".back .pos-tag");
+        if (!posTagEl) {
+          var wordBoxEl = document.querySelector(".back .word-box");
+          if (wordBoxEl) {
+            posTagEl = document.createElement("span");
+            posTagEl.className = "pos-tag";
+            wordBoxEl.appendChild(posTagEl);
+          }
+        }
+
+        var defaultPosText = "";
+        if (posTagEl) {
+          defaultPosText = (
+            posTagEl.getAttribute("data-default-pos") ||
+            posTagEl.textContent ||
+            ""
+          )
+            .trim()
+            .replace(/\s+/g, " ");
+        }
+
+        function normalizeText(text) {
+          return (text || "")
+            .replace(/\u00A0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function collectPartsOfSpeech(text) {
+          var normalized = normalizeText(text);
+          if (!normalized) return [];
+
+          var lower = normalized.toLowerCase();
+          var found = {};
+
+          function add(label) {
+            if (label) found[label] = true;
+          }
+
+          function addByPattern(pattern, label) {
+            if (pattern.test(lower)) add(label);
+          }
+
+          // Common long-form POS labels
+          addByPattern(/\bphrasal verb\b/, "phrasal verb");
+          addByPattern(/\bauxiliary verb\b/, "auxiliary verb");
+          addByPattern(/\bmodal verb\b/, "modal verb");
+          addByPattern(/\bintransitive\b/, "intransitive verb");
+          addByPattern(/\btransitive\b/, "transitive verb");
+          addByPattern(/\badjective\b/, "adjective");
+          addByPattern(/\badverb\b/, "adverb");
+          addByPattern(/\bpreposition\b/, "preposition");
+          addByPattern(/\bconjunction\b/, "conjunction");
+          addByPattern(/\binterjection\b/, "interjection");
+          addByPattern(/\bpronoun\b/, "pronoun");
+          addByPattern(/\bdeterminer\b/, "determiner");
+          addByPattern(/\bphrase\b/, "phrase");
+          addByPattern(/\bidiom\b/, "idiom");
+          addByPattern(/\bnoun\b/, "noun");
+          addByPattern(/\bverb\b/, "verb");
+
+          // Shorthand POS labels from compact dictionary headers
+          var leadingParen = normalized.match(/^\(([^)]{1,120})\)/);
+          if (leadingParen && leadingParen[1]) {
+            var tokenMap = {
+              n: "noun",
+              noun: "noun",
+              v: "verb",
+              verb: "verb",
+              adj: "adjective",
+              adjective: "adjective",
+              adv: "adverb",
+              adverb: "adverb",
+              prep: "preposition",
+              preposition: "preposition",
+              conj: "conjunction",
+              conjunction: "conjunction",
+              interj: "interjection",
+              interjection: "interjection",
+              pron: "pronoun",
+              pronoun: "pronoun",
+              det: "determiner",
+              determiner: "determiner",
+              phrase: "phrase",
+              idiom: "idiom",
+            };
+
+            var tokens = leadingParen[1].split(/[,/|]+/);
+            for (var t = 0; t < tokens.length; t++) {
+              var token = tokens[t].toLowerCase().trim();
+              if (tokenMap[token]) add(tokenMap[token]);
+            }
+          }
+
+          var order = [
+            "noun",
+            "verb",
+            "adjective",
+            "adverb",
+            "phrasal verb",
+            "auxiliary verb",
+            "modal verb",
+            "transitive verb",
+            "intransitive verb",
+            "pronoun",
+            "preposition",
+            "conjunction",
+            "interjection",
+            "determiner",
+            "phrase",
+            "idiom",
+          ];
+
+          var result = [];
+          for (var i = 0; i < order.length; i++) {
+            if (found[order[i]]) {
+              result.push(order[i]);
+            }
+          }
+          return result;
+        }
+
+        function collectPartsOfSpeechFromItem(item) {
+          if (!item) return [];
+
+          // Priority 1: explicit dictionary header element (usually first <i>/<em>/<b>/<strong>)
+          var firstChild = item.firstElementChild;
+          if (
+            firstChild &&
+            /^(I|EM|B|STRONG)$/i.test(firstChild.tagName) &&
+            firstChild.textContent
+          ) {
+            var fromHeader = collectPartsOfSpeech(firstChild.textContent);
+            if (fromHeader.length > 0) {
+              return fromHeader;
+            }
+          }
+
+          // Priority 2: first line / opening segment only (avoid body-text false positives)
+          var fullText = item.textContent || "";
+          var firstLine = fullText.split(/\r?\n/)[0] || "";
+          var firstSegment = normalizeText(firstLine).slice(0, 180);
+          var fromFirstSegment = collectPartsOfSpeech(firstSegment);
+          if (fromFirstSegment.length > 0) {
+            return fromFirstSegment;
+          }
+
+          // Fallback: broad scan over full item text
+          return collectPartsOfSpeech(fullText);
+        }
+
+        function formatPos(parts) {
+          if (!parts || parts.length === 0) return "";
+          var upper = [];
+          for (var i = 0; i < parts.length; i++) {
+            upper.push(parts[i].toUpperCase());
+          }
+          return upper.join(", ");
+        }
+
+        function collectAllPartsOfSpeech(itemList) {
+          var unique = {};
+          var merged = [];
+
+          function addParts(parts) {
+            for (var i = 0; i < parts.length; i++) {
+              var part = parts[i];
+              if (!part || unique[part]) continue;
+              unique[part] = true;
+              merged.push(part);
+            }
+          }
+
+          for (var i = 0; i < itemList.length; i++) {
+            addParts(collectPartsOfSpeechFromItem(itemList[i]));
+          }
+
+          // Include fallback field value for cards with sparse glossary formatting.
+          addParts(collectPartsOfSpeech(defaultPosText));
+
+          return merged;
+        }
+
+        function updatePosTag(allItems) {
+          if (!posTagEl) return;
+
+          var allPos = collectAllPartsOfSpeech(allItems || []);
+          var posText = formatPos(allPos);
+
+          if (!posText) {
+            posTagEl.style.display = "none";
+            return;
+          }
+
+          posTagEl.textContent = posText;
+          posTagEl.style.display = "inline-block";
+        }
+
+        var preferenceEl = document.getElementById("dictionaryPreference");
+        var preferenceRaw = preferenceEl ? preferenceEl.textContent.trim() : "";
+
+        function normalizeDictionaryName(name) {
+          return (name || "")
+            .toLowerCase()
+            .replace(/rev\.[^\s)]+/g, "")
+            .replace(/[()]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function normalizePreferenceToken(token) {
+          return normalizeText(token)
+            .toLowerCase()
+            .replace(/^['"`]+|['"`]+$/g, "")
+            .trim();
+        }
+
+        var preferencePosMap = {
+          n: "noun",
+          noun: "noun",
+          v: "verb",
+          verb: "verb",
+          adj: "adjective",
+          adjective: "adjective",
+          adv: "adverb",
+          adverb: "adverb",
+          prep: "preposition",
+          preposition: "preposition",
+          conj: "conjunction",
+          conjunction: "conjunction",
+          interj: "interjection",
+          interjection: "interjection",
+          pron: "pronoun",
+          pronoun: "pronoun",
+          det: "determiner",
+          determiner: "determiner",
+          phrase: "phrase",
+          idiom: "idiom",
+          "phrasal verb": "phrasal verb",
+          "auxiliary verb": "auxiliary verb",
+          "modal verb": "modal verb",
+          "transitive verb": "transitive verb",
+          "intransitive verb": "intransitive verb",
+        };
+
+        function normalizePosToken(token) {
+          var normalized = normalizePreferenceToken(token).replace(/\./g, "");
+          return preferencePosMap[normalized] || "";
+        }
+
+        function parsePreferenceEntry(rawEntry) {
+          var source = normalizeText(rawEntry);
+          if (!source) return null;
+
+          var parts = source
+            .split(",")
+            .map(function (part) {
+              return normalizeText(part);
+            })
+            .filter(function (part) {
+              return part.length > 0;
+            });
+
+          if (parts.length === 0) return null;
+
+          var entry = {
+            raw: source,
+            dictionary: "",
+            pos: "",
+            senseIndex: 0,
+            tokens: [],
+          };
+
+          var nonPosTokens = [];
+
+          for (var i = 0; i < parts.length; i++) {
+            var part = parts[i];
+            var asPos = normalizePosToken(part);
+            var asIndex = part.match(/^#?(\d+)$/);
+
+            if (!entry.senseIndex && asIndex) {
+              entry.senseIndex = parseInt(asIndex[1], 10) || 0;
+              continue;
+            }
+
+            if (!entry.pos && asPos) {
+              entry.pos = asPos;
+              continue;
+            }
+
+            nonPosTokens.push(part);
+          }
+
+          if (nonPosTokens.length > 0) {
+            // For tuple-like preference with POS/index qualifiers,
+            // treat the last non-POS token as dictionary name.
+            if ((entry.pos || entry.senseIndex > 0) && nonPosTokens.length > 1) {
+              entry.dictionary = nonPosTokens[nonPosTokens.length - 1];
+            } else {
+              entry.dictionary = nonPosTokens.join(", ");
+            }
+          }
+
+          entry.tokens = parts.map(normalizePreferenceToken).filter(function (t) {
+            return t.length > 0;
+          });
+
+          // Single token can still be POS-only (e.g. "adjective")
+          if (!entry.dictionary && !entry.pos && parts.length === 1) {
+            var singlePos = normalizePosToken(parts[0]);
+            if (singlePos) {
+              entry.pos = singlePos;
+            } else {
+              entry.dictionary = parts[0];
+            }
+          }
+
+          if (!entry.dictionary && !entry.pos) {
+            return null;
+          }
+
+          return entry;
+        }
+
+        function parsePreferenceEntries(rawText) {
+          var text = rawText || "";
+          if (!text) return [];
+
+          var entries = [];
+
+          // Treat parenthesized blocks as one logical preference entry.
+          var tupleRegex = /\(([^()]+)\)/g;
+          var tupleMatch;
+          while ((tupleMatch = tupleRegex.exec(text)) !== null) {
+            var tupleEntry = parsePreferenceEntry(tupleMatch[1]);
+            if (tupleEntry) entries.push(tupleEntry);
+          }
+
+          // Remaining plain entries support old dictionary-only style.
+          var remainder = text.replace(tupleRegex, " ");
+          var plainParts = remainder.split(/[\n,;|]/);
+          for (var i = 0; i < plainParts.length; i++) {
+            var plainEntry = parsePreferenceEntry(plainParts[i]);
+            if (plainEntry) entries.push(plainEntry);
+          }
+
+          return entries;
+        }
+
+        var preferenceEntries = parsePreferenceEntries(preferenceRaw);
+
+        function getDictionaryName(item) {
+          if (!item) return "";
+
+          var dictionaryAttr = item.getAttribute("data-dictionary");
+          if (dictionaryAttr) {
+            return dictionaryAttr.trim();
+          }
+
+          var firstChild = item.firstElementChild;
+          if (
+            firstChild &&
+            /^(I|EM|STRONG|B)$/i.test(firstChild.tagName) &&
+            firstChild.textContent
+          ) {
+            var label = firstChild.textContent.trim();
+            if (label) return label;
+          }
+
+          var text = item.textContent ? item.textContent.trim() : "";
+          var parenthesizedName = text.match(/\(([^()]{2,100})\)/);
+          if (parenthesizedName && parenthesizedName[1]) {
+            return parenthesizedName[1].trim();
+          }
+
+          return "";
+        }
+
+        function matchesPreference(dictionaryName, preferenceName) {
+          var normalizedDictionary = normalizeDictionaryName(dictionaryName);
+          var normalizedPreference = normalizeDictionaryName(preferenceName);
+
+          if (!normalizedDictionary || !normalizedPreference) {
+            return false;
+          }
+
+          return (
+            normalizedDictionary === normalizedPreference ||
+            normalizedDictionary.indexOf(normalizedPreference) !== -1 ||
+            normalizedPreference.indexOf(normalizedDictionary) !== -1
+          );
+        }
+
+        function getItemHeaderText(item) {
+          if (!item) return "";
+
+          var firstChild = item.firstElementChild;
+          if (
+            firstChild &&
+            /^(I|EM|STRONG|B)$/i.test(firstChild.tagName) &&
+            firstChild.textContent
+          ) {
+            return normalizeText(firstChild.textContent);
+          }
+
+          var firstLine = ((item.textContent || "").split(/\r?\n/)[0] || "").trim();
+          return normalizeText(firstLine);
+        }
+
+        function matchesPreferenceEntry(item, entry) {
+          if (!item || !entry) return false;
+
+          var dictionaryName = getDictionaryName(item);
+          var dictionaryNormalized = normalizeDictionaryName(dictionaryName);
+          var headerText = getItemHeaderText(item);
+          var headerNormalized = normalizeDictionaryName(headerText);
+          var itemPos = collectPartsOfSpeechFromItem(item);
+
+          if (entry.dictionary) {
+            var dictQuery = normalizeDictionaryName(entry.dictionary);
+            var dictMatched =
+              matchesPreference(dictionaryName, entry.dictionary) ||
+              (dictQuery && headerNormalized.indexOf(dictQuery) !== -1);
+            if (!dictMatched) {
+              return false;
+            }
+          }
+
+          if (entry.pos) {
+            var hasPos =
+              itemPos.indexOf(entry.pos) !== -1 ||
+              headerNormalized.indexOf(entry.pos) !== -1;
+            if (!hasPos) {
+              return false;
+            }
+          }
+
+          // Extra tokens in tuple (e.g. frequency tags) must also match the header/dict line.
+          if (entry.tokens && entry.tokens.length > 0) {
+            var haystack = dictionaryNormalized + " " + headerNormalized;
+            for (var i = 0; i < entry.tokens.length; i++) {
+              var token = entry.tokens[i];
+              if (!token) continue;
+
+              var tokenPos = normalizePosToken(token);
+              if (tokenPos) {
+                if (
+                  itemPos.indexOf(tokenPos) === -1 &&
+                  haystack.indexOf(tokenPos) === -1
+                ) {
+                  return false;
+                }
+                continue;
+              }
+
+              if (/^#?\d+$/.test(token)) {
+                continue;
+              }
+
+              if (haystack.indexOf(normalizeDictionaryName(token)) === -1) {
+                return false;
+              }
+            }
+          }
+
+          return true;
+        }
+
+        function pickPreferredItemIndex(itemList, entry) {
+          var matchedIndexes = [];
+          for (var i = 0; i < itemList.length; i++) {
+            if (matchesPreferenceEntry(itemList[i], entry)) {
+              matchedIndexes.push(i);
+            }
+          }
+
+          if (matchedIndexes.length === 0) return -1;
+
+          var pick = 0;
+          if (entry.senseIndex > 0) {
+            pick = entry.senseIndex - 1;
+            if (pick >= matchedIndexes.length) {
+              pick = matchedIndexes.length - 1;
+            }
+          }
+
+          return matchedIndexes[pick];
+        }
+
+        function reorderByPreference(itemList) {
+          if (preferenceEntries.length === 0 || itemList.length < 2) {
+            return itemList;
+          }
+
+          for (var p = 0; p < preferenceEntries.length; p++) {
+            var preferredIndex = pickPreferredItemIndex(
+              itemList,
+              preferenceEntries[p],
+            );
+            if (preferredIndex === -1) continue;
+
+            if (preferredIndex === 0) {
+              return itemList;
+            }
+
+            var reordered = itemList.slice(0);
+            var preferredItem = reordered.splice(preferredIndex, 1)[0];
+              reordered.unshift(preferredItem);
+              return reordered;
+          }
+
+          return itemList;
+        }
+
+        // Find all li elements with data-dictionary attribute (Yomitan format)
+        var items = Array.from(
+          container.querySelectorAll("ol > li[data-dictionary]"),
+        );
+
+        // If no data-dictionary items, try regular ol > li
+        if (items.length === 0) {
+          var ol = container.querySelector("ol");
+          if (ol) {
+            items = Array.from(ol.querySelectorAll(":scope > li"));
+          }
+        }
+
+        items = reorderByPreference(items);
+
+        var indicator = document.querySelector(".dict-indicator");
+        var navHint = document.querySelector(".dict-nav-hint");
+        var touchZoneLeft = document.querySelector(".touch-zone-left");
+        var touchZoneRight = document.querySelector(".touch-zone-right");
+
+        if (items.length <= 1) {
+          if (items[0]) {
+            items[0].style.display = "";
+          }
+          updatePosTag(items);
+          container.style.opacity = "1";
+
+          // Hide navigation if only one or no items
+          if (navHint) navHint.style.display = "none";
+          if (indicator) indicator.style.display = "none";
+          if (touchZoneLeft) touchZoneLeft.style.display = "none";
+          if (touchZoneRight) touchZoneRight.style.display = "none";
+          return;
+        }
+
+        var currentIndex = 0;
+
+        function updateView() {
+          for (var i = 0; i < items.length; i++) {
+            items[i].style.display = i === currentIndex ? "" : "none";
+          }
+          if (indicator) {
+            indicator.textContent = currentIndex + 1 + " / " + items.length;
+          }
+          container.style.opacity = "1";
+        }
+
+        function next() {
+          currentIndex = (currentIndex + 1) % items.length;
+          updateView();
+        }
+
+        function prev() {
+          currentIndex = (currentIndex - 1 + items.length) % items.length;
+          updateView();
+        }
+
+        function showGlow(element) {
+          element.classList.add("touch-active");
+          setTimeout(function () {
+            element.classList.remove("touch-active");
+          }, 300);
+        }
+
+        // Keyboard navigation
+        if (window.englishDefinitionKeyHandler) {
+          document.removeEventListener(
+            "keydown",
+            window.englishDefinitionKeyHandler,
+          );
+        }
+
+        window.englishDefinitionKeyHandler = function (e) {
+          if (e.ctrlKey || e.altKey || e.metaKey) return;
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+            return;
+
+          if (e.key === "k" || e.key === "K") {
+            next();
+            e.preventDefault();
+          } else if (e.key === "j" || e.key === "J") {
+            prev();
+            e.preventDefault();
+          }
+        };
+
+        document.addEventListener(
+          "keydown",
+          window.englishDefinitionKeyHandler,
+        );
+
+        // Touch zone navigation (iOS + Android + Desktop)
+        if (touchZoneLeft) {
+          onTap(touchZoneLeft, function () {
+            showGlow(touchZoneLeft);
+            prev();
+          });
+        }
+
+        if (touchZoneRight) {
+          onTap(touchZoneRight, function () {
+            showGlow(touchZoneRight);
+            next();
+          });
+        }
+
+        updatePosTag(items);
+        updateView();
+      }, 10);
+    })();
+  </script>
+</div>

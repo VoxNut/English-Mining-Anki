@@ -1,0 +1,1589 @@
+/* ============================================
+   SENREN-INSPIRED ENGLISH MINING CARD
+   Adapted from BrenoAqua/Senren for English
+   ============================================ */
+
+/* --- CLICKABLE WORD & SENTENCE TOGGLE --- */
+.clickable-word {
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(136, 192, 208, 0.2);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-word:hover {
+  opacity: 0.7;
+}
+
+/* Active state for mobile feedback */
+.clickable-word:active {
+  opacity: 0.6;
+}
+
+.sentence-container.hidden {
+  display: none;
+}
+
+/* --- CSS VARIABLES --- */
+:root {
+  /* Base Font */
+  --base-size: 16px;
+  --sans:
+    "JetBrains Mono NL", "JetBrains Mono", "Cascadia Mono", Consolas,
+    "Fira Code", "DejaVu Sans Mono", monospace;
+  --serif:
+    "JetBrains Mono NL", "JetBrains Mono", "Cascadia Mono", Consolas,
+    "Fira Code", "DejaVu Sans Mono", monospace;
+
+  /* ============================================
+     NORD COLOR PALETTE
+     https://www.nordtheme.com/docs/colors-and-palettes
+     ============================================ */
+
+  /* Polar Night - Dark backgrounds */
+  --nord0: #2e3440;
+  --nord1: #3b4252;
+  --nord2: #434c5e;
+  --nord3: #4c566a;
+
+  /* Snow Storm - Light/text colors */
+  --nord4: #d8dee9;
+  --nord5: #e5e9f0;
+  --nord6: #eceff4;
+
+  /* Frost - Primary accent blues */
+  --nord7: #8fbcbb;
+  --nord8: #88c0d0;
+  --nord9: #81a1c1;
+  --nord10: #5e81ac;
+
+  /* Aurora - Colorful accents */
+  --nord11: #bf616a; /* Red */
+  --nord12: #d08770; /* Orange */
+  --nord13: #ebcb8b; /* Yellow */
+  --nord14: #a3be8c; /* Green */
+  --nord15: #b48ead; /* Purple */
+
+  /* Colors - Light Mode (Snow Storm based) */
+  --text-light: var(--nord0);
+  --background-light: var(--nord6);
+  --card-bg-light: rgba(236, 239, 244, 0.9);
+  --word-bg-light: rgba(216, 222, 233, 0.5);
+  --definition-bg-light: rgba(229, 233, 240, 0.6);
+  --highlight-light: var(--nord10);
+  --muted-light: var(--nord3);
+
+  /* Colors - Dark Mode (Polar Night based) */
+  --text: var(--nord4);
+  --background: var(--nord0);
+  --card-bg: rgba(59, 66, 82, 0.7);
+  --word-bg: rgba(67, 76, 94, 0.6);
+  --definition-bg: rgba(59, 66, 82, 0.5);
+  --highlight: var(--nord8);
+  --muted: var(--nord3);
+
+  /* Accent Colors (from Frost & Aurora) */
+  --accent-blue: var(--nord8);
+  --accent-purple: var(--nord15);
+  --accent-teal: var(--nord7);
+  --accent-green: var(--nord14);
+
+  /* Spacing */
+  --spacing-sm: 5px;
+  --spacing-md: 10px;
+  --spacing-lg: 15px;
+  --spacing-xl: 20px;
+  --base-padding: 20px;
+
+  /* Border Radius */
+  --radius-sm: 5px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+
+  /* Dimensions */
+  --card-max-width: 700px;
+  --picture-height: 200px;
+  --grid-column-min-width: 390px;
+  --grid-gap: var(--spacing-lg);
+
+  /* Shadows */
+  --card-shadow-light: rgba(0, 0, 0, 0.08);
+  --card-shadow: rgba(0, 0, 0, 0.3);
+
+  /* Advanced Image Configuration */
+  --collect-glossary-images: true;
+  --collect-glossary-images-max: 8;
+  --collect-glossary-images-min-dim: 100;
+  --collect-glossary-images-min-area: 12000;
+  --toggle-picture-lightbox-key: q;
+  --toggle-picture-lightbox-grid-key: shift + q;
+  --toggle-image-key: m;
+
+  /* Lightbox Theme */
+  --lightbox-bg: rgba(0, 0, 0, 0.85);
+  --lightbox-bg-light: rgba(0, 0, 0, 0.85);
+  --lightbox-nav-width: 100px;
+  --lightbox-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+  --z-index-lightbox: 1000;
+  --base-transition: 0.2s ease-in-out;
+}
+
+/* --- BASE LAYOUT --- */
+:root {
+  font-size: var(--base-size);
+}
+
+.card {
+  display: block;
+  font-family: var(--sans);
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--text-light);
+  background: var(--background-light);
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.card.nightMode,
+.nightMode body {
+  color: #ffffff;
+  background: var(--background);
+}
+
+html.custom-dark-mode body,
+html.custom-dark-mode .card,
+html.custom-dark-mode .card.nightMode {
+  color: #ffffff;
+  background: #000000;
+}
+
+/* --- FRONT & BACK WRAPPER --- */
+.front,
+.back {
+  position: relative;
+  padding: var(--base-padding);
+  max-width: var(--card-max-width);
+  margin: 20px auto;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.front::before,
+.back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  z-index: -1;
+  background: var(--card-bg-light);
+  box-shadow: 0 4px 20px var(--card-shadow-light);
+}
+
+.card.nightMode .front::before,
+.card.nightMode .back::before {
+  background: var(--card-bg);
+  box-shadow: 0 8px 32px var(--card-shadow);
+}
+
+/* --- HEADER --- */
+.header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  min-height: 24px;
+}
+
+.header-left {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
+
+.freq-badge {
+  background: var(--word-bg-light);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-teal);
+  letter-spacing: 0.5px;
+}
+
+.card.nightMode .freq-badge {
+  background: var(--word-bg);
+  color: var(--accent-teal);
+}
+
+.audio-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* --- GRID LAYOUT --- */
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "word";
+  gap: var(--grid-gap);
+  margin-bottom: var(--spacing-xl);
+  min-height: var(--picture-height);
+  min-width: 0;
+}
+
+/* When image exists, switch to two-column layout */
+.grid-container:has(.picture-container) {
+  grid-template-columns: minmax(var(--grid-column-min-width), 1fr) auto;
+  grid-template-areas: "word picture";
+  gap: var(--grid-gap);
+}
+
+@media (max-width: 600px) {
+  .grid-container:has(.picture-container) {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "word"
+      "picture";
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .grid-container:has(.picture-container) {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "word"
+      "picture";
+  }
+}
+
+/* --- PICTURE CONTAINER --- */
+.picture-container {
+  grid-area: picture;
+  background: var(--word-bg-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card.nightMode .picture-container {
+  background: var(--word-bg);
+}
+
+.picture-container img {
+  cursor: zoom-in;
+  display: none;
+  width: auto !important;
+  height: var(--picture-height) !important;
+  max-width: 100% !important;
+  max-height: var(--picture-height) !important;
+  min-height: var(--picture-height) !important;
+  object-fit: cover !important;
+  user-select: none;
+}
+
+.picture-container img:first-of-type {
+  display: block;
+}
+
+/* Navigation Arrows */
+.nav-arrow {
+  position: absolute;
+  width: 50px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--base-transition);
+  z-index: 2;
+}
+
+.nav-arrow.hidden {
+  display: none !important;
+}
+
+.nav-arrow:hover {
+  opacity: 1;
+}
+
+.nav-arrow.left {
+  left: 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 1),
+    rgba(0, 0, 0, 0)
+  );
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+.nav-arrow.right {
+  right: 0;
+  -webkit-mask-image: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 1),
+    rgba(0, 0, 0, 0)
+  );
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+/* --- LIGHTBOX --- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: var(--lightbox-bg-light);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  z-index: var(--z-index-lightbox);
+  touch-action: none;
+  transition:
+    opacity var(--base-transition),
+    visibility var(--base-transition);
+}
+
+:is(.card.nightMode, .custom-dark-mode) .lightbox {
+  background: var(--lightbox-bg);
+}
+
+.lightbox.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lightbox img {
+  position: relative;
+  max-width: 80%;
+  max-height: 80%;
+  box-shadow: var(--lightbox-shadow);
+  transition: transform var(--base-transition);
+  cursor: grab;
+}
+
+/* Lightbox Navigation */
+.lightbox .lightbox-nav {
+  position: absolute;
+  width: var(--lightbox-nav-width);
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--base-transition);
+}
+
+.lightbox-nav.hidden {
+  display: none !important;
+}
+
+.lightbox .lightbox-nav:hover {
+  opacity: 1;
+}
+
+.lightbox .lightbox-nav.left {
+  left: 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 1),
+    rgba(0, 0, 0, 0)
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 1),
+    rgba(0, 0, 0, 0)
+  );
+}
+
+.lightbox .lightbox-nav.right {
+  right: 0;
+  -webkit-mask-image: linear-gradient(
+    to left,
+    rgba(255, 255, 255, 1),
+    rgba(0, 0, 0, 0)
+  );
+  mask-image: linear-gradient(
+    to left,
+    rgba(255, 255, 255, 1),
+    rgba(0, 0, 0, 0)
+  );
+}
+
+/* Lightbox Grid Toggle */
+.lightbox-grid-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  z-index: 1001;
+  transition:
+    background var(--base-transition),
+    color var(--base-transition);
+}
+
+.lightbox-grid-toggle:hover {
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+}
+
+/* Lightbox Grid View */
+.lightbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 20px;
+  width: 90%;
+  height: 80%;
+  margin: 0 auto;
+  place-items: center;
+  overflow: hidden;
+}
+
+.lightbox-grid img {
+  max-width: 100%;
+  max-height: 150px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.lightbox-grid img:hover {
+  transform: scale(1.05);
+}
+
+/* Image removed toggle style */
+.back.image-removed .picture-container {
+  display: none !important;
+}
+
+.back.image-removed .grid-container {
+  grid-template-columns: 1fr !important;
+  grid-template-areas: "word" !important;
+}
+
+/* Hide/Show image buttons */
+.toggle-image-visibility.hide-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  opacity: 0;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.picture-container:hover .toggle-image-visibility.hide-btn {
+  opacity: 1;
+}
+
+.toggle-image-visibility.hide-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+}
+
+.toggle-image-visibility.hide-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- WORD BOX --- */
+.word-box {
+  grid-area: word;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-lg);
+  background: var(--word-bg-light);
+  border-radius: var(--radius-md);
+  min-height: 120px;
+  min-width: 0;
+}
+
+.card.nightMode .word-box {
+  background: var(--word-bg);
+}
+
+.word-front,
+.word-back {
+  font-size: clamp(1.6rem, 7vw, 2.4rem);
+  font-weight: 700;
+  color: var(--highlight-light);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-sm);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.card.nightMode .word-front,
+.card.nightMode .word-back {
+  color: var(--highlight);
+}
+
+.ipa-reading {
+  font-family: "Lucida Sans Unicode", "DejaVu Sans", sans-serif;
+  font-size: 1rem;
+  color: var(--nord3);
+  margin-top: var(--spacing-sm);
+}
+
+.card.nightMode .ipa-reading {
+  color: var(--nord5);
+}
+
+/* US/GB labels inside IPA reading */
+.ipa-reading b,
+.ipa-reading strong {
+  color: var(--nord10);
+  font-weight: 600;
+}
+
+.card.nightMode .ipa-reading b,
+.card.nightMode .ipa-reading strong {
+  color: var(--nord8);
+}
+
+/* Layout: centered, no bullets */
+.ipa-reading ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ipa-reading li.pronunciation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--nord4);
+  font-size: 0.95rem;
+}
+
+.card.nightMode .ipa-reading li.pronunciation {
+  color: var(--nord5);
+}
+
+/* The (US) / (GB) wrapper — strip default italic */
+.ipa-reading li.pronunciation i {
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0;
+}
+
+/* Flag badge */
+.ipa-reading li.pronunciation .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(94, 129, 172, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.card.nightMode .ipa-reading li.pronunciation .tag {
+  background: rgba(129, 161, 193, 0.25);
+}
+
+.pos-tag {
+  display: inline-block;
+  margin-top: var(--spacing-md);
+  padding: 4px 12px;
+  background: rgba(136, 192, 208, 0.25);
+  color: var(--nord10);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.card.nightMode .pos-tag {
+  background: rgba(136, 192, 208, 0.3);
+  color: var(--nord8);
+}
+
+/* --- SENTENCE CONTAINER --- */
+.sentence-container {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.sentence-front,
+.sentence-back {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text-light);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.card.nightMode .sentence-front,
+.card.nightMode .sentence-back {
+  color: var(--text);
+}
+
+/* Highlighted word in sentence */
+.sentence-front b,
+.sentence-front strong,
+.sentence-back b,
+.sentence-back strong {
+  color: var(--accent-purple);
+  font-weight: 600;
+  background: rgba(180, 142, 173, 0.15);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* --- AUDIO SECTION --- */
+.audio-section {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--word-bg-light);
+  border-radius: var(--radius-md);
+}
+
+.card.nightMode .audio-section {
+  background: var(--word-bg);
+}
+
+/* --- DEFINITION CONTAINER --- */
+.definition-container {
+  margin-top: var(--spacing-lg);
+  text-align: left;
+}
+
+.dict-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding: 0 var(--spacing-sm);
+}
+
+.dict-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted-light);
+  font-weight: 600;
+}
+
+.card.nightMode .dict-title {
+  color: var(--muted);
+}
+
+.dict-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.dict-nav-hint {
+  font-size: 0.6rem;
+  color: var(--nord3);
+  background: var(--word-bg-light);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.card.nightMode .dict-nav-hint {
+  color: var(--nord4);
+  background: var(--word-bg);
+}
+
+.dict-indicator {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--highlight-light);
+  background: rgba(136, 192, 208, 0.2);
+  padding: 3px 10px;
+  border-radius: 12px;
+  min-width: 45px;
+  text-align: center;
+}
+
+.card.nightMode .dict-indicator {
+  color: var(--highlight);
+  background: rgba(136, 192, 208, 0.25);
+}
+
+.definition-text {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-light);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.card.nightMode .definition-text {
+  color: var(--text);
+}
+
+.definition-text ul,
+.definition-text ol {
+  padding-left: 20px;
+  margin: var(--spacing-sm) 0;
+}
+
+.definition-text li {
+  margin-bottom: var(--spacing-sm);
+}
+
+.definition-text b,
+.definition-text strong {
+  color: var(--highlight-light);
+  font-weight: 600;
+}
+
+.definition-text .glossary-word-highlight {
+  background: rgba(136, 192, 208, 0.18);
+  color: var(--nord8);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(136, 192, 208, 0.55);
+}
+
+.card.nightMode .definition-text b,
+.card.nightMode .definition-text strong {
+  color: var(--highlight);
+}
+
+.card.nightMode .definition-text .glossary-word-highlight {
+  background: rgba(136, 192, 208, 0.22);
+  color: var(--nord8);
+  border-bottom-color: rgba(136, 192, 208, 0.65);
+}
+
+/* --- TAGS CONTAINER --- */
+.tags-container {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(76, 86, 106, 0.2);
+}
+
+.card.nightMode .tags-container {
+  border-top-color: rgba(216, 222, 233, 0.1);
+}
+
+.back .back-tags-container {
+  justify-content: flex-start;
+  align-items: center;
+  text-align: left;
+  margin-top: var(--spacing-sm);
+}
+
+.misc-info {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(76, 86, 106, 0.85);
+  background: rgba(216, 222, 233, 0.35);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.card.nightMode .misc-info {
+  color: rgba(216, 222, 233, 0.78);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.tag {
+  padding: 3px 10px;
+  background: var(--word-bg-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--nord3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card.nightMode .tag {
+  background: rgba(136, 192, 208, 0.2);
+  color: var(--nord8);
+}
+
+/* --- AUDIO BUTTON STYLING --- */
+.replay-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(76, 86, 106, 0.15);
+  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.card.nightMode .replay-button {
+  background: rgba(216, 222, 233, 0.1);
+}
+
+.replay-button:hover {
+  background: rgba(76, 86, 106, 0.25);
+}
+
+.card.nightMode .replay-button:hover {
+  background: rgba(216, 222, 233, 0.2);
+}
+
+.replay-button svg {
+  width: 18px;
+  height: 18px;
+  color: var(--muted-light);
+  fill: currentColor;
+  transition: color 0.2s ease;
+}
+
+.card.nightMode .replay-button svg {
+  color: var(--highlight);
+  fill: currentColor;
+}
+
+.replay-button:hover svg {
+  color: var(--nord0);
+}
+
+.card.nightMode .replay-button:hover svg {
+  color: var(--text);
+}
+
+/* Hide default Anki audio circle outline */
+.replay-button svg circle {
+  display: none !important;
+}
+
+/* Ensure the polygon/path is filled and styled */
+.replay-button svg polygon,
+.replay-button svg path {
+  fill: currentColor;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 600px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "word"
+      "picture";
+    gap: var(--spacing-md);
+  }
+
+  .word-front,
+  .word-back {
+    font-size: clamp(1.3rem, 8.5vw, 2rem);
+  }
+
+  .front,
+  .back {
+    padding: var(--spacing-lg);
+    margin: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .front,
+  .back {
+    padding: var(--spacing-md);
+    margin: 6px;
+  }
+
+  .word-box {
+    padding: var(--spacing-md);
+  }
+
+  .word-front,
+  .word-back {
+    line-height: 1.15;
+  }
+}
+
+/* --- NIGHT MODE ENHANCEMENTS --- */
+.card.nightMode,
+body.nightMode {
+  --highlight-light: var(--nord8);
+  --muted-light: #a0a0a0;
+  --text-light: #ffffff;
+}
+
+html.custom-dark-mode .card,
+html.custom-dark-mode .card.nightMode,
+html.custom-dark-mode body {
+  /* Keep readable accents while shifting every surface into focus mode */
+  --highlight-light: var(--nord8);
+  --highlight: var(--nord8);
+  --muted-light: #a0a0a0;
+  --muted: #8a8f98;
+  --text-light: #ffffff;
+  --text: #ffffff;
+  --background-light: #000000;
+  --background: #000000;
+  --card-bg-light: #030303;
+  --card-bg: #030303;
+  --word-bg-light: #0d1117;
+  --word-bg: #0d1117;
+  --definition-bg-light: #090d12;
+  --definition-bg: #090d12;
+  --card-shadow-light: transparent;
+  --card-shadow: transparent;
+
+  /* Monochrome token overrides for focus mode */
+  --accent-blue: #d0d6de;
+  --accent-purple: #c4ccd6;
+  --accent-teal: #d0d6de;
+  --accent-green: #c2cad4;
+  --nord7: #d0d6de;
+  --nord8: #d0d6de;
+  --nord9: #b8c0ca;
+  --nord10: #d0d6de;
+  --nord13: #c2cad4;
+}
+
+/* Focus mode surfaces */
+html.custom-dark-mode .front::before,
+html.custom-dark-mode .back::before {
+  background: #030303 !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+html.custom-dark-mode .word-box,
+html.custom-dark-mode .picture-container,
+html.custom-dark-mode .audio-section,
+html.custom-dark-mode .definition-text ol > li,
+html.custom-dark-mode .dict-nav-hint,
+html.custom-dark-mode .freq-badge,
+html.custom-dark-mode .misc-info {
+  background: #0d1117 !important;
+}
+
+html.custom-dark-mode .definition-text ol > li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Strip residual colored accents in focus mode */
+html.custom-dark-mode .freq-badge,
+html.custom-dark-mode .pos-tag,
+html.custom-dark-mode .dict-indicator,
+html.custom-dark-mode .definition-text b,
+html.custom-dark-mode .definition-text strong,
+html.custom-dark-mode .word-front,
+html.custom-dark-mode .word-back,
+html.custom-dark-mode .ipa-reading b,
+html.custom-dark-mode .ipa-reading strong,
+html.custom-dark-mode .tag,
+html.custom-dark-mode .dict-title,
+html.custom-dark-mode .misc-info {
+  color: #d7dee6 !important;
+}
+
+html.custom-dark-mode .pos-tag,
+html.custom-dark-mode .dict-indicator,
+html.custom-dark-mode .replay-button,
+html.custom-dark-mode .tag,
+html.custom-dark-mode .dict-nav-hint,
+html.custom-dark-mode .freq-badge {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+html.custom-dark-mode .replay-button:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.custom-dark-mode .replay-button svg {
+  color: var(--highlight) !important;
+}
+
+html.custom-dark-mode .replay-button:hover svg {
+  color: #ffffff !important;
+}
+
+html.custom-dark-mode .definition-text i,
+html.custom-dark-mode .dict-oxford,
+html.custom-dark-mode .dict-wiki,
+html.custom-dark-mode .dict-macmillan,
+html.custom-dark-mode .dict-vn,
+html.custom-dark-mode .dict-collins {
+  color: #d7dee6 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-left-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+html.custom-dark-mode .definition-text ol > li:nth-child(1),
+html.custom-dark-mode .definition-text ol > li:nth-child(2),
+html.custom-dark-mode .definition-text ol > li:nth-child(3),
+html.custom-dark-mode .definition-text ol > li:nth-child(4),
+html.custom-dark-mode .definition-text ol > li:nth-child(5) {
+  border-left-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+html.custom-dark-mode .sentence-front b,
+html.custom-dark-mode .sentence-front strong,
+html.custom-dark-mode .sentence-back b,
+html.custom-dark-mode .sentence-back strong {
+  color: #d7dee6 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.custom-dark-mode .definition-text .glossary-word-highlight {
+  background: rgba(136, 192, 208, 0.25) !important;
+  color: #d0d6de !important;
+  border-bottom: 2px solid rgba(136, 192, 208, 0.5) !important;
+}
+
+html.custom-dark-mode .touch-zone:hover,
+html.custom-dark-mode .touch-zone.touch-active,
+html.custom-dark-mode .card.nightMode .touch-zone.touch-active {
+  background: linear-gradient(
+    to var(--touch-zone-direction, right),
+    rgba(255, 255, 255, 0.2),
+    transparent 72%
+  ) !important;
+}
+/* ============================================
+   DICTIONARY SOURCE HIGHLIGHTING
+   ============================================ */
+
+/* Dictionary source labels */
+.definition-text i {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Oxford (seth-oald-extra) - Nord Frost Blue */
+.definition-text i:has(+ :contains("seth-oald")),
+.dict-oxford {
+  background: linear-gradient(
+    135deg,
+    rgba(136, 192, 208, 0.2),
+    rgba(136, 192, 208, 0.1)
+  );
+  color: var(--accent-blue);
+  border-left: 3px solid var(--accent-blue);
+}
+
+/* Wiki/Wiktionary - Purple */
+.dict-wiki {
+  background: linear-gradient(
+    135deg,
+    rgba(180, 142, 173, 0.2),
+    rgba(180, 142, 173, 0.1)
+  );
+  color: var(--accent-purple);
+  border-left: 3px solid var(--accent-purple);
+}
+
+/* MacMillan (mondo) - Teal */
+.dict-macmillan {
+  background: linear-gradient(
+    135deg,
+    rgba(136, 192, 208, 0.2),
+    rgba(136, 192, 208, 0.1)
+  );
+  color: var(--accent-teal);
+  border-left: 3px solid var(--accent-teal);
+}
+
+/* Vietnamese Dictionary (Lạc Việt) - Green */
+.dict-vn {
+  background: linear-gradient(
+    135deg,
+    rgba(163, 190, 140, 0.2),
+    rgba(163, 190, 140, 0.1)
+  );
+  color: var(--accent-green);
+  border-left: 3px solid var(--accent-green);
+}
+
+/* Collins - Nord Aurora Yellow */
+.dict-collins {
+  background: linear-gradient(
+    135deg,
+    rgba(235, 203, 139, 0.2),
+    rgba(235, 203, 139, 0.1)
+  );
+  color: var(--nord13);
+  border-left: 3px solid var(--nord13);
+}
+
+/* Definition container styles for multiple dictionaries */
+.definition-text ol {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: dict-counter;
+}
+
+.definition-text ol > li {
+  position: relative;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  background: var(--definition-bg-light);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent-blue);
+}
+
+.card.nightMode .definition-text ol > li {
+  background: var(--definition-bg);
+}
+
+/* Alternate colors for different dictionary entries */
+.definition-text ol > li:nth-child(1) {
+  border-left-color: var(--accent-blue);
+}
+
+.definition-text ol > li:nth-child(2) {
+  border-left-color: var(--accent-purple);
+}
+
+.definition-text ol > li:nth-child(3) {
+  border-left-color: var(--accent-teal);
+}
+
+.definition-text ol > li:nth-child(4) {
+  border-left-color: var(--accent-green);
+}
+
+.definition-text ol > li:nth-child(5) {
+  border-left-color: var(--nord13);
+}
+
+/* Dictionary source header styling within list items */
+.definition-text ol > li > i:first-child,
+.definition-text ol > li > em:first-child {
+  display: block;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid rgba(76, 86, 106, 0.3);
+}
+
+/* Color coding for dictionary source headers */
+.definition-text ol > li:nth-child(1) > i:first-child,
+.definition-text ol > li:nth-child(1) > em:first-child {
+  color: var(--accent-blue);
+}
+
+.definition-text ol > li:nth-child(2) > i:first-child,
+.definition-text ol > li:nth-child(2) > em:first-child {
+  color: var(--accent-purple);
+}
+
+.definition-text ol > li:nth-child(3) > i:first-child,
+.definition-text ol > li:nth-child(3) > em:first-child {
+  color: var(--accent-teal);
+}
+
+.definition-text ol > li:nth-child(4) > i:first-child,
+.definition-text ol > li:nth-child(4) > em:first-child {
+  color: var(--accent-green);
+}
+
+.definition-text ol > li:nth-child(5) > i:first-child,
+.definition-text ol > li:nth-child(5) > em:first-child {
+  color: var(--nord13);
+}
+
+/* Sub-lists within dictionary entries */
+.definition-text ol > li ol {
+  margin-top: var(--spacing-sm);
+  padding-left: 0.35em;
+  margin-left: 0;
+  list-style: decimal;
+  list-style-position: inside;
+}
+
+.definition-text ol > li ul {
+  margin-top: var(--spacing-sm);
+  padding-left: 1.2em;
+  margin-left: 0;
+  list-style: disc;
+  list-style-position: outside;
+}
+
+.definition-text ol > li ol > li,
+.definition-text ol > li > ul > li {
+  background: transparent;
+  border-left: none;
+  padding: var(--spacing-sm) 0 0 0;
+  margin-bottom: 0;
+  text-indent: 0;
+}
+
+/* Nested bullets used by examples: visually distinct from definition bullets */
+.definition-text ol > li > ul > li > ul {
+  margin-top: 4px;
+  padding-left: 1.35em;
+  margin-left: 0.2em;
+  list-style: square;
+  list-style-position: outside;
+}
+
+.definition-text ol > li > ul > li > ul > li {
+  background: transparent;
+  border-left: none;
+  padding: 2px 0;
+  margin-bottom: 0;
+}
+
+/* Example sentences within definitions */
+.definition-text ol > li ol > li::marker {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.definition-text ol > li > ul > li::marker {
+  color: var(--nord8);
+}
+
+.definition-text ol > li > ul > li > ul > li::marker {
+  color: rgba(216, 222, 233, 0.75);
+}
+
+/* OALD hierarchy (actual output): meaning bullets vs examples bullets */
+.definition-text ol > li[data-dictionary] > ul {
+  list-style: disc;
+  list-style-position: outside;
+  padding-left: 1.2em;
+}
+
+.definition-text ol > li[data-dictionary] > ul > li::marker {
+  color: var(--nord8);
+}
+
+.definition-text ul[data-sc-custom-attr="examples"] {
+  list-style: square;
+  list-style-position: outside;
+  padding-left: 1.6em;
+  margin-top: 6px;
+  margin-left: 0.35em;
+}
+
+.definition-text ul[data-sc-custom-attr="examples"] > li {
+  padding-top: 2px;
+}
+
+.definition-text ul[data-sc-custom-attr="examples"] > li::marker {
+  color: rgba(216, 222, 233, 0.72);
+}
+
+/* Pronunciation styling */
+.definition-text .pron,
+.definition-text code {
+  font-family: "Lucida Sans Unicode", "DejaVu Sans", monospace;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: rgba(67, 76, 94, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Example text styling (triangular bullet) */
+.definition-text li:has(▸),
+.definition-text li:contains("▸") {
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* Pronunciation labels (US, GB) and tags (obs, fig, etc.) */
+.definition-text b,
+.definition-text strong {
+  color: var(--nord7);
+  font-weight: 600;
+}
+
+.card.nightMode .definition-text b,
+.card.nightMode .definition-text strong {
+  color: var(--nord8);
+}
+
+/* Small inline tags/labels in definitions */
+.definition-text small,
+.definition-text .tag,
+.definition-text abbr {
+  color: var(--nord9);
+  font-size: 0.8rem;
+}
+
+.card.nightMode .definition-text small,
+.card.nightMode .definition-text .tag,
+.card.nightMode .definition-text abbr {
+  color: var(--nord7);
+}
+/* --- TOUCH NAVIGATION ZONES --- */
+.definition-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.touch-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16%;
+  max-width: 56px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: rgba(136, 192, 208, 0.15);
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  z-index: 10;
+}
+
+.touch-zone-left {
+  left: 0;
+  --touch-zone-direction: right;
+}
+
+.touch-zone-right {
+  right: 0;
+  --touch-zone-direction: left;
+}
+
+.touch-zone:hover {
+  background: linear-gradient(
+    to var(--touch-zone-direction, right),
+    rgba(136, 192, 208, 0.18),
+    transparent 72%
+  );
+}
+
+/* Subtle glow effect on tap */
+.touch-zone.touch-active {
+  background: linear-gradient(
+    to var(--touch-zone-direction, right),
+    rgba(136, 192, 208, 0.32),
+    rgba(136, 192, 208, 0.12) 46%,
+    transparent 82%
+  );
+  animation: subtle-fade 0.3s ease-out;
+}
+
+.card.nightMode .touch-zone.touch-active {
+  background: linear-gradient(
+    to var(--touch-zone-direction, right),
+    rgba(136, 192, 208, 0.36),
+    rgba(136, 192, 208, 0.14) 46%,
+    transparent 82%
+  );
+}
+
+@keyframes subtle-fade {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.definition-text {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Force stacked layout when JS marks mobile devices.
+   This bypasses unreliable media-query handling in some AnkiDroid WebViews. */
+.back.mobile-stack-layout .grid-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--spacing-md);
+  min-height: 0;
+}
+
+.back.mobile-stack-layout .word-box,
+.back.mobile-stack-layout .picture-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .back .grid-container {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "word"
+      "picture" !important;
+    gap: var(--spacing-md);
+  }
+
+  .back .word-box,
+  .back .picture-container {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .touch-zone {
+    width: 30%;
+    max-width: 100px;
+  }
+}
+
+/* ============================================
+   NSFW BLUR STYLES
+   ============================================ */
+
+body[class*="nsfw" i] .picture-container img:not(.unblurred),
+.picture-container[class*="nsfw" i] img:not(.unblurred),
+.picture-container.is-nsfw img:not(.unblurred) {
+  filter: blur(20px);
+  transition: filter 0.3s ease;
+}
+
+body[class*="nsfw" i] .picture-container img.unblurred,
+.picture-container[class*="nsfw" i] img.unblurred,
+.picture-container.is-nsfw img.unblurred {
+  filter: blur(0);
+  transition: filter 0.3s ease;
+}
+
+.definition-text ol[data-sc-content="glosses"] {
+  list-style-position: outside !important;
+  padding-left: 1.5em;
+  margin-left: 0;
+}
+
+.definition-text ol[data-sc-content="glosses"] > li {
+  background: transparent !important;
+  border-left: none !important;
+  padding: 2px 0 4px 0 !important;
+  margin-bottom: 4px !important;
+}
+
+/* WTY circled-number markers can look tiny in JetBrains Mono on desktop.
+   Force a symbol-friendly marker font and slightly larger size for readability. */
+.definition-text ol[data-sc-content="glosses"] > li::marker {
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols2", "Noto Sans",
+    "Arial Unicode MS", sans-serif;
+  font-size: 1.12em;
+}
+
+/* wty-en-en auto-bolds the target word in examples — match our highlight style */
+[data-dictionary="wty-en-en"] [data-sc-content="bold-text"] {
+  background: rgba(235, 203, 139, 0.26);
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 700;
+}
+
+.card.nightMode [data-dictionary="wty-en-en"] [data-sc-content="bold-text"] {
+  background: rgba(235, 203, 139, 0.34);
+}
+
+html.custom-dark-mode
+  [data-dictionary="wty-en-en"]
+  [data-sc-content="bold-text"] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Cambridge hierarchy: meaning bullets vs example bullets */
+.definition-text li[data-dictionary*="cambridge" i] > ul {
+  list-style: disc;
+  list-style-position: outside;
+  padding-left: 1.25em;
+  margin-top: var(--spacing-sm);
+}
+
+.definition-text li[data-dictionary*="cambridge" i] > ul > li::marker {
+  color: var(--nord8);
+}
+
+.definition-text li[data-dictionary*="cambridge" i] ul ul {
+  list-style: square;
+  list-style-position: outside;
+  padding-left: 1.35em;
+  margin-top: 6px;
+  margin-left: 0.25em;
+}
+
+.definition-text li[data-dictionary*="cambridge" i] ul ul > li {
+  padding-top: 2px;
+}
+
+.definition-text li[data-dictionary*="cambridge" i] ul ul > li::marker {
+  color: rgba(216, 222, 233, 0.72);
+}

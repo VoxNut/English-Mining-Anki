@@ -1,0 +1,178 @@
+<div class="front">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <span class="toggle-custom-dark-mode" style="cursor: pointer">
+        <svg
+          class="sun-icon"
+          style="display: none"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg
+          class="moon-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </span>
+    </div>
+
+    {{#Frequency}}
+    <span class="freq-badge">{{Frequency}}</span>
+    {{/Frequency}}
+  </div>
+
+  <!-- Grid Layout -->
+  <div class="grid-container">
+    <div class="word-box">
+      <div class="word-front clickable-word">{{Word}}</div>
+    </div>
+  </div>
+
+  <!-- Sentence -->
+  <div class="sentence-container hidden">
+    <div class="sentence-front">{{Sentence}}</div>
+  </div>
+
+  <!-- Audio -->
+</div>
+
+<script>
+  (function () {
+    var word = document.querySelector(".front .clickable-word");
+    var sentence = document.querySelector(".front .sentence-container");
+
+    // Cross-platform tap handler (iOS doesn't fire click on non-interactive divs)
+    function onTap(element, callback) {
+      if (!element) return;
+      var touchMoved = false;
+      element.addEventListener(
+        "touchstart",
+        function () {
+          touchMoved = false;
+        },
+        { passive: true },
+      );
+      element.addEventListener(
+        "touchmove",
+        function () {
+          touchMoved = true;
+        },
+        { passive: true },
+      );
+      element.addEventListener("touchend", function (e) {
+        if (!touchMoved) {
+          e.preventDefault();
+          callback(e);
+        }
+      });
+      element.addEventListener("click", function (e) {
+        callback(e);
+      });
+    }
+
+    if (word && sentence) {
+      onTap(word, function () {
+        sentence.classList.toggle("hidden");
+      });
+    }
+
+    // Theme mode toggle: Nord dark <-> Black dark
+    function darkMode() {
+      var button = document.querySelector(".toggle-custom-dark-mode");
+      var htmlElement = document.querySelector("html");
+      var sunIcon = document.querySelector(".sun-icon");
+      var moonIcon = document.querySelector(".moon-icon");
+      var THEME_KEY = "englishThemeMode";
+
+      function getThemeMode() {
+        try {
+          var mode = localStorage.getItem(THEME_KEY);
+          if (mode === "black" || mode === "nord") return mode;
+
+          // Backward compatibility with old key.
+          if (localStorage.getItem("darkMode") === "enabled") {
+            return "black";
+          }
+        } catch (e) {}
+        return "nord";
+      }
+
+      function setThemeMode(mode) {
+        try {
+          localStorage.setItem(THEME_KEY, mode);
+          localStorage.removeItem("darkMode");
+        } catch (e) {}
+      }
+
+      var applyDarkMode = function () {
+        var isBlackTheme = getThemeMode() === "black";
+
+        if (isBlackTheme) {
+          htmlElement.classList.add("custom-dark-mode");
+          if (button) button.classList.add("dark-mode");
+          if (sunIcon) sunIcon.style.display = "block";
+          if (moonIcon) moonIcon.style.display = "none";
+        } else {
+          htmlElement.classList.remove("custom-dark-mode");
+          if (button) button.classList.remove("dark-mode");
+          if (sunIcon) sunIcon.style.display = "none";
+          if (moonIcon) moonIcon.style.display = "block";
+        }
+      };
+
+      if (typeof requestAnimationFrame !== "undefined") {
+        requestAnimationFrame(applyDarkMode);
+      } else {
+        applyDarkMode();
+      }
+
+      if (button && !button.dataset.hasClickListener) {
+        button.addEventListener("click", function () {
+          var current = getThemeMode();
+          setThemeMode(current === "black" ? "nord" : "black");
+
+          if (typeof requestAnimationFrame !== "undefined") {
+            requestAnimationFrame(applyDarkMode);
+          } else {
+            applyDarkMode();
+          }
+        });
+        button.dataset.hasClickListener = "true";
+      }
+    }
+
+    darkMode();
+
+    // === Custom play icon for replay buttons ===
+    var replayBtns = document.querySelectorAll(".replay-button");
+    for (var i = 0; i < replayBtns.length; i++) {
+      var btn = replayBtns[i];
+      btn.innerHTML = '<svg viewBox="0 0 24 24" class="play-icon" width="18" height="18"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>';
+    }
+  })();
+</script>
