@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap');
-
 /* ============================================
    SENREN-INSPIRED ENGLISH MINING CARD
    Adapted from BrenoAqua/Senren for English
@@ -34,9 +32,10 @@
   /* Base Font */
   --base-size: 16px;
   --sans:
-    "Noto Serif JP", "JetBrains Mono NL", "JetBrains Mono", sans-serif;
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --serif:
-    "Noto Serif JP", "JetBrains Mono NL", "JetBrains Mono", serif;
+    ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   /* ============================================
      NORD COLOR PALETTE
